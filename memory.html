@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smriti NER - Memory Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fdfbf7;
+            color: #1a202c;
+        }
+        .btn-large {
+            transition: transform 0.2s;
+        }
+        .btn-large:hover {
+            transform: scale(1.05);
+        }
+        .game-grid {
+            display: grid;
+            gap: 12px;
+            width: 100%;
+            justify-content: center;
+            padding-bottom: 140px; /* space for footer */
+        }
+        .card {
+            perspective: 1000px;
+            cursor: pointer;
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            min-width: 50px;
+            max-width: 120px;
+            margin: auto;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+            border: 2px solid #cbd5e1;
+        }
+        
+        /* Aesthetic shiny front cover */
+        .card-front {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+            color: white;
+            font-size: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #a5b4fc;
+        }
+        .card-front::before {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: -100%;
+            width: 50%;
+            height: 300%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+            transform: rotate(45deg);
+            animation: shine 4s infinite;
+        }
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
+        }
+        
+        .card-front i {
+            opacity: 0.8;
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3));
+        }
+
+        .card-back {
+            background-color: white;
+            transform: rotateY(180deg);
+            font-size: 3rem;
+            border: 2px solid #e2e8f0;
+        }
+        @media (max-width: 640px) {
+            .card-back { font-size: 2rem; }
+            .card-front i { font-size: 1.5rem; }
+        }
+
+        /* Success state for matched cards */
+        .card.matched-success .card-back {
+            background-color: #22c55e !important;
+            color: white !important;
+            border-color: #16a34a !important;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+        }
+        .card.matched-success .card-back span {
+            display: none;
+        }
+        .card.matched-success .card-back::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            font-size: 3rem;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .card.hidden-card {
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.5s, opacity 0.5s;
+            pointer-events: none;
+        }
+
+        .animate-spin-slow {
+            animation: spin 3s linear infinite;
+        }
+
+        /* Fixed Footer */
+        .game-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+            border-top: 2px solid #e2e8f0;
+            z-index: 40;
+            padding: 0.75rem 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stat-badge {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            text-align: center;
+            flex: 1;
+            margin: 0.25rem;
+            min-width: 80px;
+        }
+        .stat-value {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #1e293b;
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Confetti */
+        .confetti-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            overflow: hidden;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0.8;
+            animation: fall linear forwards;
+        }
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(720deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation -->
+    <header class="bg-teal-700 text-white p-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <a href="games.html" class="hover:text-teal-200 transition">
+                    <i class="fas fa-arrow-left text-3xl"></i>
+                </a>
+                <i class="fas fa-clone text-3xl ml-4"></i>
+                <h1 class="text-2xl sm:text-3xl font-bold">Memory Cards</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <label class="flex items-center cursor-pointer bg-teal-800 px-3 py-2 rounded-full hover:bg-teal-900 transition shadow-inner border border-teal-600">
+                    <span class="mr-3 text-sm font-bold hidden sm:inline uppercase tracking-wider"><i class="fas fa-volume-up"></i> Voice</span>
+                    <input type="checkbox" id="voice-toggle" class="sr-only peer" checked>
+                    <div class="w-12 h-6 bg-gray-400 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500 relative"></div>
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow w-full max-w-6xl mx-auto p-4 flex flex-col items-center mt-4 relative">
+
+        <!-- Setup/Tutorial Screen -->
+        <div id="setup-screen" class="w-full bg-white p-6 md:p-8 rounded-2xl shadow-xl border-2 border-indigo-100 mb-8">
+            <h2 class="text-3xl md:text-4xl font-bold text-indigo-800 mb-8 text-center">How to Play</h2>
+            
+            <div class="mb-8">
+                <!-- Tutorial Text -->
+                <div class="bg-indigo-50 p-6 md:p-8 rounded-2xl flex flex-col justify-center shadow-inner border border-indigo-100 max-w-4xl mx-auto">
+                    <h3 class="text-2xl font-bold text-indigo-700 mb-6 flex items-center justify-center"><i class="fas fa-book-open mr-3 text-3xl"></i> Instructions</h3>
+                    <ul class="list-none text-lg md:text-xl text-gray-700 space-y-5 font-medium max-w-2xl mx-auto">
+                        <li class="flex items-start"><i class="fas fa-hand-pointer text-indigo-500 mt-1 mr-4 text-2xl"></i> Tap a card to flip it over.</li>
+                        <li class="flex items-start"><i class="fas fa-eye text-indigo-500 mt-1 mr-4 text-2xl"></i> Memorize the image and tap another card to find its match.</li>
+                        <li class="flex items-start"><i class="fas fa-check-circle text-indigo-500 mt-1 mr-4 text-2xl"></i> Match all the pairs to clear the board.</li>
+                        <li class="flex items-start"><i class="fas fa-star text-yellow-500 mt-1 mr-4 text-2xl"></i> Earn Knowledge Points for matches, but try to avoid misses!</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mb-10 border-t-2 border-gray-100 pt-8">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Number of Pairs</h3>
+                
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-4" id="pair-options">
+                    <!-- Buttons generated by JS -->
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="btn-large w-full max-w-lg mx-auto block bg-indigo-600 text-white text-2xl md:text-3xl font-bold py-5 rounded-2xl shadow-xl border-b-4 border-indigo-800 hover:bg-indigo-500 active:translate-y-1 active:border-b-0 transition-all">
+                Start Game <i class="fas fa-play ml-2"></i>
+            </button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden w-full flex flex-col items-center">
+            
+            <div id="game-grid" class="game-grid">
+                <!-- Cards injected here -->
+            </div>
+            
+            <!-- Game Footer Stats -->
+            <div class="game-footer flex-col sm:flex-row gap-4">
+                <div class="flex flex-wrap justify-center flex-1 w-full sm:w-auto">
+                    <div class="stat-badge">
+                        <div class="stat-value text-indigo-600" id="stat-level">1</div>
+                        <div class="stat-label">Level</div>
+                    </div>
+                    <div class="stat-badge">
+                        <div class="stat-value text-indigo-600" id="stat-round">1</div>
+                        <div class="stat-label">Round</div>
+                    </div>
+                    <div class="stat-badge">
+                        <div class="stat-value text-blue-600" id="stat-moves">0</div>
+                        <div class="stat-label">Moves</div>
+                    </div>
+                    <div class="stat-badge">
+                        <div class="stat-value text-red-500" id="stat-misses">0</div>
+                        <div class="stat-label">Misses</div>
+                    </div>
+                    <div class="stat-badge">
+                        <div class="stat-value text-green-600" id="stat-accuracy">100%</div>
+                        <div class="stat-label">Accuracy</div>
+                    </div>
+                    <div class="stat-badge bg-amber-50 border-amber-200">
+                        <div class="stat-value text-amber-600" id="stat-points">0</div>
+                        <div class="stat-label text-amber-700">Points</div>
+                    </div>
+                </div>
+                
+                <button onclick="confirmEndGame()" class="bg-red-100 text-red-700 border-2 border-red-300 px-6 py-3 rounded-xl font-bold hover:bg-red-200 transition text-lg shadow-sm whitespace-nowrap w-full sm:w-auto">
+                    <i class="fas fa-times-circle mr-2"></i> End Game
+                </button>
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="hidden w-full bg-white p-8 md:p-12 rounded-3xl shadow-2xl border-4 border-green-400 max-w-4xl text-center z-10 relative mt-4">
+            <div class="text-yellow-400 text-8xl mb-6"><i class="fas fa-trophy animate-bounce"></i></div>
+            <h2 class="text-5xl md:text-6xl font-extrabold text-green-700 mb-4 tracking-tight">Level Cleared!</h2>
+            <p class="text-2xl md:text-3xl text-gray-600 mb-10 font-medium">Outstanding memory skills!</p>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-10 bg-green-50 p-8 rounded-2xl shadow-inner border border-green-100">
+                <div class="flex flex-col items-center justify-center">
+                    <span class="text-5xl font-black text-amber-500 mb-2" id="v-points">0</span>
+                    <span class="text-green-800 font-bold uppercase tracking-wider text-sm">Total Points</span>
+                </div>
+                <div class="flex flex-col items-center justify-center">
+                    <span class="text-5xl font-black text-blue-600 mb-2" id="v-flips">0</span>
+                    <span class="text-green-800 font-bold uppercase tracking-wider text-sm">Total Flips</span>
+                </div>
+                <div class="flex flex-col items-center justify-center">
+                    <span class="text-5xl font-black text-red-500 mb-2" id="v-misses">0</span>
+                    <span class="text-green-800 font-bold uppercase tracking-wider text-sm">Misses</span>
+                </div>
+                <div class="flex flex-col items-center justify-center">
+                    <span class="text-5xl font-black text-purple-600 mb-2" id="v-accuracy">100%</span>
+                    <span class="text-green-800 font-bold uppercase tracking-wider text-sm">Accuracy</span>
+                </div>
+            </div>
+
+            <button onclick="playAgain()" class="btn-large w-full max-w-md mx-auto block bg-green-500 text-white text-3xl font-bold py-5 rounded-2xl shadow-xl border-b-4 border-green-700 hover:bg-green-400 active:translate-y-1 active:border-b-0 transition-all">
+                Play Next Round <i class="fas fa-forward ml-2"></i>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-[100] p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 md:p-10 text-center border-4 border-red-100">
+            <div class="text-red-500 text-7xl mb-6"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3 class="text-4xl font-extrabold text-gray-800 mb-4">End Game?</h3>
+            <p class="text-xl text-gray-600 mb-10 font-medium">Are you sure you want to cancel the current game? All progress for this round will be lost.</p>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-gray-100 text-gray-800 font-bold text-2xl py-4 rounded-xl hover:bg-gray-200 border-2 border-gray-300 transition">Keep Playing</button>
+                <button onclick="endGame()" class="flex-1 bg-red-500 text-white font-bold text-2xl py-4 rounded-xl hover:bg-red-600 shadow-md transition">Yes, End Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confetti Container -->
+    <div id="confetti-container" class="confetti-container hidden"></div>
+
+    <!-- Voice Image Popup -->
+    <div id="voice-popup" class="fixed top-24 left-1/2 transform -translate-x-1/2 bg-white bg-opacity-95 px-8 py-4 rounded-full shadow-2xl border-4 border-indigo-400 z-[60] flex items-center space-x-6 transition-all duration-300 opacity-0 pointer-events-none -translate-y-4">
+        <span id="voice-popup-emoji" class="text-6xl drop-shadow-md"></span>
+        <span id="voice-popup-text" class="text-3xl font-extrabold text-indigo-900 tracking-wide uppercase"></span>
+    </div>
+
+    <script>
+        // Emoji mappings with names for Speech Synthesis
+        const emojiData = [
+            { emoji: '🍎', name: 'Red Apple' }, { emoji: '🍌', name: 'Banana' }, { emoji: '🍒', name: 'Cherries' },
+            { emoji: '🍓', name: 'Strawberry' }, { emoji: '🥑', name: 'Avocado' }, { emoji: '🥕', name: 'Carrot' },
+            { emoji: '🌽', name: 'Corn' }, { emoji: '🍕', name: 'Pizza' }, { emoji: '🍔', name: 'Burger' },
+            { emoji: '🍟', name: 'French Fries' }, { emoji: '🍦', name: 'Ice Cream' }, { emoji: '🍩', name: 'Donut' },
+            { emoji: '☕', name: 'Coffee' }, { emoji: '🌞', name: 'Sun' }, { emoji: '🌙', name: 'Moon' },
+            { emoji: '☁️', name: 'Cloud' }, { emoji: '❄️', name: 'Snowflake' }, { emoji: '🔥', name: 'Fire' },
+            { emoji: '💧', name: 'Water Drop' }, { emoji: '⚽', name: 'Soccer Ball' }, { emoji: '🏀', name: 'Basketball' },
+            { emoji: '🏈', name: 'Football' }, { emoji: '🎾', name: 'Tennis Ball' }, { emoji: '🚗', name: 'Car' },
+            { emoji: '✈️', name: 'Airplane' }, { emoji: '🚀', name: 'Rocket' }, { emoji: '⛵', name: 'Sailboat' },
+            { emoji: '🐶', name: 'Dog' }, { emoji: '🐱', name: 'Cat' }, { emoji: '🐭', name: 'Mouse' },
+            { emoji: '🐰', name: 'Rabbit' }, { emoji: '🦊', name: 'Fox' }, { emoji: '🐻', name: 'Bear' },
+            { emoji: '🐼', name: 'Panda' }, { emoji: '🦁', name: 'Lion' }, { emoji: '🐯', name: 'Tiger' },
+            { emoji: '🐮', name: 'Cow' }, { emoji: '🐷', name: 'Pig' }, { emoji: '🐸', name: 'Frog' },
+            { emoji: '🐵', name: 'Monkey' }
+        ];
+
+        let flippedCards = [];
+        let matches = 0;
+        let totalPairs = 12; // default
+        let lockBoard = false;
+        
+        let stats = {
+            moves: 0,
+            misses: 0,
+            round: 1,
+            level: 1,
+            points: 0,
+            accuracy: 100,
+            flips: 0
+        };
+
+        const setupScreen = document.getElementById('setup-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const victoryScreen = document.getElementById('victory-screen');
+        const gameGrid = document.getElementById('game-grid');
+        const pairOptionsContainer = document.getElementById('pair-options');
+        const confirmModal = document.getElementById('confirm-modal');
+        const voiceToggle = document.getElementById('voice-toggle');
+        const confettiContainer = document.getElementById('confetti-container');
+
+        const voicePopup = document.getElementById('voice-popup');
+        const voicePopupEmoji = document.getElementById('voice-popup-emoji');
+        const voicePopupText = document.getElementById('voice-popup-text');
+        let voicePopupTimeout = null;
+
+        const sRound = document.getElementById('stat-round');
+        const sLevel = document.getElementById('stat-level');
+        const sMoves = document.getElementById('stat-moves');
+        const sMisses = document.getElementById('stat-misses');
+        const sAccuracy = document.getElementById('stat-accuracy');
+        const sPoints = document.getElementById('stat-points');
+
+        const pairOptions = [6, 8, 10, 12, 15, 18, 21, 24, 27];
+        let selectedPairBtn = null;
+
+        function initSetup() {
+            pairOptionsContainer.innerHTML = '';
+            pairOptions.forEach(num => {
+                const btn = document.createElement('button');
+                btn.className = `py-4 px-2 rounded-xl font-bold text-2xl border-4 transition-all shadow-sm ${num === totalPairs ? 'bg-indigo-600 text-white border-indigo-800 scale-105' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'}`;
+                btn.textContent = `${num}`;
+                btn.onclick = () => selectPairOption(btn, num);
+                pairOptionsContainer.appendChild(btn);
+                if(num === totalPairs) selectedPairBtn = btn;
+            });
+        }
+
+        function selectPairOption(btn, num) {
+            if(selectedPairBtn) {
+                selectedPairBtn.className = 'py-4 px-2 rounded-xl font-bold text-2xl border-4 transition-all shadow-sm bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300';
+            }
+            btn.className = 'py-4 px-2 rounded-xl font-bold text-2xl border-4 transition-all shadow-sm bg-indigo-600 text-white border-indigo-800 scale-105';
+            selectedPairBtn = btn;
+            totalPairs = num;
+        }
+
+        initSetup();
+
+
+
+        function calculateGridCols(totalCards) {
+            let cols = 4;
+            if (window.innerWidth < 640) {
+                if (totalCards <= 12) cols = 3;
+                else if (totalCards <= 16) cols = 4;
+                else if (totalCards <= 24) cols = 4;
+                else if (totalCards <= 36) cols = 5;
+                else cols = 6;
+            } else {
+                if (totalCards <= 16) cols = 4;
+                else if (totalCards <= 24) cols = 6;
+                else if (totalCards <= 36) cols = 6;
+                else if (totalCards <= 42) cols = 7;
+                else cols = 9;
+            }
+            return cols;
+        }
+
+        function startGame() {
+            resetStats();
+            initGameEngine();
+        }
+
+        function playAgain() {
+            stats.round++;
+            resetStats(false);
+            initGameEngine();
+        }
+
+        function resetStats(full = true) {
+            if(full) {
+                stats.round = 1;
+            }
+            stats.moves = 0;
+            stats.misses = 0;
+            stats.points = 0;
+            stats.accuracy = 100;
+            stats.flips = 0;
+            
+            stats.level = Math.max(1, Math.floor((totalPairs - 3) / 3));
+            
+            updateStatsUI();
+        }
+
+        function updateStatsUI() {
+            sRound.textContent = stats.round;
+            sLevel.textContent = stats.level;
+            sMoves.textContent = stats.moves;
+            sMisses.textContent = stats.misses;
+            sPoints.textContent = stats.points;
+            sAccuracy.textContent = stats.accuracy + '%';
+        }
+
+        function initGameEngine() {
+            matches = 0;
+            flippedCards = [];
+            lockBoard = false;
+            
+            setupScreen.classList.add('hidden');
+            victoryScreen.classList.add('hidden');
+            confettiContainer.classList.add('hidden');
+            confettiContainer.innerHTML = '';
+            gameScreen.classList.remove('hidden');
+            
+            gameGrid.innerHTML = '';
+            
+            const shuffled = [...emojiData].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, totalPairs);
+            
+            const cards = [...selected, ...selected];
+            cards.sort(() => 0.5 - Math.random());
+            
+            const cols = calculateGridCols(cards.length);
+            gameGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            
+            cards.forEach((item) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                cardEl.dataset.emoji = item.emoji;
+                cardEl.dataset.name = item.name;
+                
+                cardEl.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="card-back">
+                            <span>${item.emoji}</span>
+                        </div>
+                    </div>
+                `;
+                
+                cardEl.addEventListener('click', flipCard);
+                gameGrid.appendChild(cardEl);
+            });
+            
+            if(voiceToggle.checked && stats.moves === 0) {
+                 speak(`Level ${stats.level} started. Find ${totalPairs} pairs.`);
+            }
+        }
+
+        let femaleVoice = null;
+        
+        function loadVoices() {
+            if (!('speechSynthesis' in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            femaleVoice = voices.find(v => 
+                v.name.includes('Female') || 
+                v.name.includes('Zira') || 
+                v.name.includes('Samantha') || 
+                v.name.includes('Victoria')
+            ) || voices[0];
+        }
+        
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+            loadVoices();
+        }
+
+        function speak(text) {
+            if (voiceToggle.checked && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.rate = 1.1; 
+                if (femaleVoice) {
+                    msg.voice = femaleVoice;
+                }
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        function showVoicePopup(emoji, name) {
+            if (!voiceToggle.checked) return;
+            voicePopupEmoji.textContent = emoji;
+            voicePopupText.textContent = name;
+            
+            voicePopup.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+            voicePopup.classList.add('opacity-100', 'translate-y-0');
+            
+            clearTimeout(voicePopupTimeout);
+            voicePopupTimeout = setTimeout(() => {
+                voicePopup.classList.remove('opacity-100', 'translate-y-0');
+                voicePopup.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
+            }, 1500);
+        }
+
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === flippedCards[0]) return;
+            if (this.classList.contains('matched')) return;
+
+            this.classList.add('flipped');
+            stats.flips++;
+            
+            speak(this.dataset.name);
+            showVoicePopup(this.dataset.emoji, this.dataset.name);
+            
+            if (flippedCards.length === 0) {
+                flippedCards.push(this);
+                return;
+            }
+            
+            flippedCards.push(this);
+            stats.moves++;
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            const isMatch = flippedCards[0].dataset.emoji === flippedCards[1].dataset.emoji;
+            
+            if (isMatch) {
+                stats.points += 100;
+                disableCards();
+            } else {
+                stats.misses++;
+                stats.points = Math.max(0, stats.points - 10);
+                unflipCards();
+            }
+            
+            stats.accuracy = stats.moves === 0 ? 100 : Math.round(((stats.moves - stats.misses) / stats.moves) * 100);
+            updateStatsUI();
+        }
+
+        function disableCards() {
+            flippedCards[0].classList.add('matched', 'matched-success');
+            flippedCards[1].classList.add('matched', 'matched-success');
+            
+            const card1 = flippedCards[0];
+            const card2 = flippedCards[1];
+            flippedCards = [];
+            
+            setTimeout(() => {
+                card1.classList.add('hidden-card');
+                card2.classList.add('hidden-card');
+            }, 1000);
+
+            matches++;
+            
+            if (matches === totalPairs) {
+                setTimeout(showVictory, 1500);
+            }
+        }
+
+        function unflipCards() {
+            lockBoard = true;
+            
+            setTimeout(() => {
+                flippedCards[0].classList.remove('flipped');
+                flippedCards[1].classList.remove('flipped');
+                
+                flippedCards = [];
+                lockBoard = false;
+            }, 1000);
+        }
+
+        window.addEventListener('resize', () => {
+            if (!gameScreen.classList.contains('hidden') && totalPairs) {
+                const cols = calculateGridCols(totalPairs * 2);
+                gameGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            }
+        });
+
+        function confirmEndGame() {
+            confirmModal.classList.remove('hidden');
+            confirmModal.classList.add('flex');
+        }
+
+        function closeConfirmModal() {
+            confirmModal.classList.add('hidden');
+            confirmModal.classList.remove('flex');
+        }
+
+        function endGame() {
+            closeConfirmModal();
+            gameScreen.classList.add('hidden');
+            setupScreen.classList.remove('hidden');
+            
+            if(voiceToggle.checked) {
+                speak("Game cancelled.");
+            }
+        }
+
+        function showVictory() {
+            gameScreen.classList.add('hidden');
+            victoryScreen.classList.remove('hidden');
+            
+            document.getElementById('v-points').textContent = stats.points;
+            document.getElementById('v-flips').textContent = stats.flips;
+            document.getElementById('v-misses').textContent = stats.misses;
+            document.getElementById('v-accuracy').textContent = stats.accuracy + '%';
+            
+            if(voiceToggle.checked) {
+                speak("Level Cleared! Outstanding memory skills!");
+            }
+            
+            triggerConfetti();
+        }
+
+        function triggerConfetti() {
+            confettiContainer.classList.remove('hidden');
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+            
+            for(let i=0; i<150; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Randomize shape (square or rectangle)
+                if (Math.random() > 0.5) {
+                    confetti.style.width = '12px';
+                    confetti.style.height = '6px';
+                }
+                
+                confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                confetti.style.animationDelay = (Math.random() * 2) + 's';
+                confettiContainer.appendChild(confetti);
+            }
+        }
+    </script>
+</body>
+</html>
