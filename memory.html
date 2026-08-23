@@ -20,101 +20,156 @@
         }
         .game-grid {
             display: grid;
-            gap: 12px;
-            width: 100%;
+            gap: 15px;
+            width: 110%;
             justify-content: center;
+            padding-top : 140px;
             padding-bottom: 140px; /* space for footer */
         }
         .card {
-            perspective: 1000px;
+            perspective: 1400px;
             cursor: pointer;
             aspect-ratio: 1 / 1;
             width: 100%;
-            min-width: 50px;
-            max-width: 120px;
+            min-width: 65px;
+            max-width: 165px;
             margin: auto;
+            transition: transform 0.15s ease, filter 0.15s ease;
+        }
+        .card:hover:not(.matched):not(.flipped) {
+            transform: scale(1.08) translateY(-5px);
+            filter: brightness(1.1);
+        }
+        .card:active:not(.matched) {
+            transform: scale(0.95);
         }
         .card-inner {
             position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+            /* Slower, more dramatic 3D flip */
+            transition: transform 0.75s cubic-bezier(0.3, 0.9, 0.4, 1);
             transform-style: preserve-3d;
         }
         .card.flipped .card-inner {
             transform: rotateY(180deg);
         }
-        .card-front, .card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
-            border: 2px solid #cbd5e1;
-        }
+.card-front, .card-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box; /* Ensures borders don't push content down */
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1.25rem;
+}
         
         /* Aesthetic shiny front cover */
         .card-front {
-            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+            background: linear-gradient(145deg, #3730a3 0%, #4f46e5 40%, #6366f1 70%, #818cf8 100%);
             color: white;
-            font-size: 2.5rem;
+            font-size: 3rem;
             position: relative;
             overflow: hidden;
-            border: 2px solid #a5b4fc;
+            border: 3px solid #a5b4fc;
         }
         .card-front::before {
             content: '';
             position: absolute;
             top: -100%;
             left: -100%;
-            width: 50%;
+            width: 55%;
             height: 300%;
-            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0) 100%);
             transform: rotate(45deg);
-            animation: shine 4s infinite;
+            animation: shine 3.5s infinite;
+        }
+        /* Radial highlight shimmer */
+        .card-front::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 28% 28%, rgba(255,255,255,0.18) 0%, transparent 60%);
+            border-radius: 1.25rem;
+            pointer-events: none;
         }
         @keyframes shine {
-            0% { left: -100%; }
-            20% { left: 200%; }
+            0%   { left: -100%; }
+            25%  { left: 200%; }
             100% { left: 200%; }
         }
         
         .card-front i {
-            opacity: 0.8;
-            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3));
+            opacity: 0.95;
+            font-size: 3rem;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.45));
         }
 
         .card-back {
-            background-color: white;
-            transform: rotateY(180deg);
-            font-size: 3rem;
-            border: 2px solid #e2e8f0;
+    background: linear-gradient(160deg, #ffffff 55%, #eef2ff 100%);
+    transform: rotateY(180deg);
+    font-size: 3.8rem;
+    border: 3px solid #c7d2fe;
+    box-shadow: 
+        0 14px 24px -4px rgba(99,102,241,0.18),
+        0 5px 10px -2px rgba(99,102,241,0.1);
+    flex-direction: column;
+    justify-content: center; /* Explicitly keep vertical center */
+    gap: 2px;
+}
+        .card-back .card-emoji {
+            font-size: inherit;
+            line-height: 1;
+            display: block;
+            position: relative;
+            z-index: 2;
+        }
+        .card-back .card-label {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #6366f1;
+            text-align: center;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            line-height: 1;
+            max-width: 92%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         @media (max-width: 640px) {
-            .card-back { font-size: 2rem; }
-            .card-front i { font-size: 1.5rem; }
+            .card-back { font-size: 2.4rem; }
+            .card-front i { font-size: 2rem; }
+            .card { max-width: 105px; min-width: 52px; }
+            .card-back .card-label { font-size: 0.5rem; }
+            .tick-mark { font-size: 2.5rem; }
         }
 
         /* Success state for matched cards */
         .card.matched-success .card-back {
-            background-color: #22c55e !important;
+            background: linear-gradient(145deg, #16a34a, #22c55e) !important;
             color: white !important;
             border-color: #16a34a !important;
-            box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.55) !important;
         }
-        .card.matched-success .card-back span {
+        .card.matched-success .card-back .card-emoji,
+        .card.matched-success .card-back .card-label {
             display: none;
         }
-        .card.matched-success .card-back::after {
-            content: '\f00c';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
+        .card.matched-success .card-back .tick-mark {
+            display: flex !important;
+        }
+        .tick-mark {
+            display: none;
+            align-items: center;
+            justify-content: center;
             font-size: 3rem;
+            color: white;
             animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         @keyframes popIn {
@@ -314,9 +369,21 @@
                 </div>
             </div>
 
-            <button onclick="playAgain()" class="btn-large w-full max-w-md mx-auto block bg-green-500 text-white text-3xl font-bold py-5 rounded-2xl shadow-xl border-b-4 border-green-700 hover:bg-green-400 active:translate-y-1 active:border-b-0 transition-all">
-                Play Next Round <i class="fas fa-forward ml-2"></i>
-            </button>
+            <div class="mb-8 border-t-2 border-green-100 pt-6">
+                <h3 class="text-xl font-bold text-gray-700 mb-4 text-center">Change Pairs for Next Round?</h3>
+                <div class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-3" id="victory-pair-options">
+                    <!-- Buttons generated by JS -->
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button onclick="playAgain()" class="btn-large flex-1 bg-green-500 text-white text-2xl font-bold py-5 rounded-2xl shadow-xl border-b-4 border-green-700 hover:bg-green-400 active:translate-y-1 active:border-b-0 transition-all">
+                    Play Again <i class="fas fa-redo ml-2"></i>
+                </button>
+                <button onclick="goToSetup()" class="btn-large flex-1 bg-indigo-100 text-indigo-800 text-2xl font-bold py-5 rounded-2xl shadow border-b-4 border-indigo-300 hover:bg-indigo-200 active:translate-y-1 active:border-b-0 transition-all">
+                    Main Menu <i class="fas fa-home ml-2"></i>
+                </button>
+            </div>
         </div>
 
     </main>
@@ -513,7 +580,9 @@
                             <i class="fas fa-star"></i>
                         </div>
                         <div class="card-back">
-                            <span>${item.emoji}</span>
+                            <span class="card-emoji">${item.emoji}</span>
+                            <span class="card-label">${item.name}</span>
+                            <span class="tick-mark"><i class="fas fa-check-circle"></i></span>
                         </div>
                     </div>
                 `;
@@ -677,11 +746,40 @@
             document.getElementById('v-misses').textContent = stats.misses;
             document.getElementById('v-accuracy').textContent = stats.accuracy + '%';
             
+            // Populate pair selector on victory screen
+            const vpContainer = document.getElementById('victory-pair-options');
+            vpContainer.innerHTML = '';
+            const pairOpts = [6, 8, 10, 12, 15, 18, 21, 24, 27];
+            pairOpts.forEach(num => {
+                const btn = document.createElement('button');
+                btn.className = `py-3 px-2 rounded-xl font-bold text-xl border-4 transition-all shadow-sm ${num === totalPairs ? 'bg-indigo-600 text-white border-indigo-800 scale-105' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'}`;
+                btn.textContent = `${num}`;
+                btn.onclick = () => {
+                    vpContainer.querySelectorAll('button').forEach(b => {
+                        b.className = 'py-3 px-2 rounded-xl font-bold text-xl border-4 transition-all shadow-sm bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300';
+                    });
+                    btn.className = 'py-3 px-2 rounded-xl font-bold text-xl border-4 transition-all shadow-sm bg-indigo-600 text-white border-indigo-800 scale-105';
+                    totalPairs = num;
+                    // Sync the setup screen pair count too
+                    if(selectedPairBtn) selectedPairBtn.className = 'py-4 px-2 rounded-xl font-bold text-2xl border-4 transition-all shadow-sm bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300';
+                    selectedPairBtn = pairOptionsContainer.querySelectorAll('button')[pairOptions.indexOf(num)];
+                    if(selectedPairBtn) selectedPairBtn.className = 'py-4 px-2 rounded-xl font-bold text-2xl border-4 transition-all shadow-sm bg-indigo-600 text-white border-indigo-800 scale-105';
+                };
+                vpContainer.appendChild(btn);
+            });
+            
             if(voiceToggle.checked) {
                 speak("Level Cleared! Outstanding memory skills!");
             }
             
             triggerConfetti();
+        }
+
+        function goToSetup() {
+            victoryScreen.classList.add('hidden');
+            confettiContainer.classList.add('hidden');
+            confettiContainer.innerHTML = '';
+            setupScreen.classList.remove('hidden');
         }
 
         function triggerConfetti() {
