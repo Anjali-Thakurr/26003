@@ -38,16 +38,6 @@
             100% { transform: scale(1); }
         }
 
-        /* Voice button pulse */
-        .voice-btn {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
-            70%  { box-shadow: 0 0 0 15px rgba(74, 222, 128, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
-        }
-
         /* Difficulty badge */
         .badge {
             font-size: 0.8rem;
@@ -142,7 +132,7 @@
             </a>
 
             <!-- Jigsaw Explorer -->
-            <a href="jigsaw.html" class="game-card bg-pink-50 border-4 border-pink-300 p-7 rounded-3xl flex flex-col items-center shadow-md text-center">
+            <a href="jigsaw-puzzle.html" class="game-card bg-pink-50 border-4 border-pink-300 p-7 rounded-3xl flex flex-col items-center shadow-md text-center">
                 <div class="icon-circle bg-pink-500 text-white p-6 rounded-full mb-4 shadow-md">
                     <i class="fas fa-puzzle-piece text-5xl"></i>
                 </div>
@@ -170,13 +160,6 @@
         </div>
 
     </main>
-
-    <!-- Floating Voice Button -->
-    <div class="fixed bottom-8 right-8 z-50">
-        <button class="voice-btn bg-green-500 hover:bg-green-600 text-white rounded-full p-6 shadow-2xl flex items-center justify-center border-4 border-green-300" title="Voice Assist">
-            <i class="fas fa-microphone text-4xl"></i>
-        </button>
-    </div>
 
 </body>
 </html>

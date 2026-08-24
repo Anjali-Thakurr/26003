@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🧩 Jigsaw Explorer — MDoNER</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #fdfbf7;
+      color: #1a202c;
+      min-height: 100vh;
+    }
+
+    /* ── Screen management ─────────────────────────────────── */
+    .screen { display: none; }
+    .screen.active { display: flex; }
+
+    /* ── Difficulty cards ──────────────────────────────────── */
+    .diff-card {
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+      cursor: pointer;
+    }
+    .diff-card:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.14);
+    }
+    .diff-card:active { transform: scale(0.98); }
+
+    /* ── Play area ─────────────────────────────────────────── */
+    #play-area {
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 20% 20%, rgba(13,148,136,.07) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 80%, rgba(251,191,36,.05) 0%, transparent 60%), #fdfbf7;
+    }
+    #play-area::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(0,0,0,.06) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+    }
+
+    /* ── Ghost canvas ──────────────────────────────────────── */
+    #ghost-canvas {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      opacity: 0; pointer-events: none;
+      border-radius: 12px;
+      transition: opacity .3s;
+      border: 3px dashed rgba(13,148,136,.6);
+      box-shadow: 0 0 40px rgba(13,148,136,.25);
+      z-index: 5;
+    }
+    #ghost-canvas.visible { opacity: .55; }
+
+    /* ── Pieces ────────────────────────────────────────────── */
+    .piece-wrap {
+      position: absolute;
+      cursor: grab;
+      touch-action: none;
+      transition: filter .12s;
+      will-change: transform;
+    }
+    .piece-wrap:hover:not(.snapped) {
+      filter: brightness(1.08) drop-shadow(0 6px 16px rgba(0,0,0,.4));
+    }
+    .piece-wrap.dragging {
+      cursor: grabbing;
+      filter: brightness(1.12) drop-shadow(0 12px 28px rgba(0,0,0,.55));
+    }
+    .piece-wrap.snapped { cursor: default; pointer-events: none; }
+
+    /* ── Progress bar ──────────────────────────────────────── */
+    #progress-bar-wrap {
+      position: absolute; bottom: 14px; left: 50%;
+      transform: translateX(-50%);
+      width: 240px;
+      background: #e2e8f0;
+      border-radius: 99px;
+      border: 1px solid #cbd5e0;
+      overflow: hidden; height: 10px; z-index: 20;
+    }
+    #progress-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #0d9488, #0f766e);
+      transition: width .3s;
+    }
+
+    /* ── Snap ring ─────────────────────────────────────────── */
+    @keyframes snap-ring { 0%{transform:scale(.8);opacity:1} 100%{transform:scale(2);opacity:0} }
+    .snap-ring {
+      position: absolute;
+      border: 3px solid #10b981;
+      border-radius: 6px;
+      pointer-events: none; z-index: 10000;
+      animation: snap-ring .42s ease-out forwards;
+    }
+
+    /* ── Loading spinner ───────────────────────────────────── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 56px; height: 56px;
+      border: 5px solid #e2e8f0;
+      border-top-color: #0d9488;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    /* ── Countdown ─────────────────────────────────────────── */
+    @keyframes countPop {
+      0%   { transform: scale(0.3); opacity: 0; }
+      40%  { transform: scale(1.35); opacity: 1; }
+      70%  { transform: scale(0.95); }
+      100% { transform: scale(1); opacity: 0; }
+    }
+    .count-number {
+      animation: countPop 0.9s ease-out forwards;
+    }
+
+    /* ── Celebration modal ─────────────────────────────────── */
+    #win-screen {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,.85);
+      backdrop-filter: blur(10px);
+      z-index: 9000;
+      display: none;
+      align-items: center; justify-content: center;
+    }
+    #win-screen.show { display: flex; }
+
+    @keyframes bounceIn {
+      0%   { transform: scale(0.5); opacity: 0; }
+      60%  { transform: scale(1.08); opacity: 1; }
+      80%  { transform: scale(0.97); }
+      100% { transform: scale(1); }
+    }
+    .win-card {
+      animation: bounceIn .55s cubic-bezier(.36,.07,.19,.97) forwards;
+    }
+
+    @keyframes trophy-bounce {
+      0%,100% { transform: translateY(0) rotate(-3deg); }
+      50%      { transform: translateY(-14px) rotate(3deg); }
+    }
+    .trophy-anim { animation: trophy-bounce 1.4s ease-in-out infinite; }
+
+    /* ── Confetti canvas ───────────────────────────────────── */
+    #confetti-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 8999;
+      display: none;
+    }
+    #confetti-canvas.show { display: block; }
+
+    /* ── Countdown overlay ─────────────────────────────────── */
+    #countdown-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,.72);
+      backdrop-filter: blur(6px);
+      z-index: 8900;
+      display: none;
+      align-items: center; justify-content: center;
+    }
+    #countdown-overlay.show { display: flex; }
+
+    /* ── Peek pulse button ─────────────────────────────────── */
+    #btn-peek.active {
+      background: #ccfbf1;
+      border-color: #0d9488;
+      color: #0f766e;
+    }
+
+    /* Accessibility — large focus outlines */
+    button:focus-visible, a:focus-visible {
+      outline: 3px solid #0d9488;
+      outline-offset: 3px;
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER (matches index.html / games.html theme)
+═══════════════════════════════════════════════════════════ -->
+<header class="bg-teal-700 text-white p-4 shadow-md sticky top-0 z-50">
+  <div class="max-w-5xl mx-auto flex justify-between items-center">
+    <div class="flex items-center space-x-3">
+      <a href="games.html" class="hover:text-teal-200 transition mr-1" title="Back to Games">
+        <i class="fas fa-arrow-left text-2xl"></i>
+      </a>
+      <i class="fas fa-puzzle-piece text-4xl"></i>
+      <div>
+        <h1 class="text-2xl font-bold leading-tight">Jigsaw Explorer</h1>
+        <p class="text-teal-200 text-base">Ministry of Development of North Eastern Region (MDoNER)</p>
+      </div>
+    </div>
+    <!-- Live game stats (hidden on difficulty screen) -->
+    <div id="game-stats-bar" class="hidden flex items-center gap-4 text-lg font-semibold">
+      <div class="flex items-center gap-2 bg-teal-800 px-3 py-1 rounded-full">
+        <i class="fas fa-clock text-yellow-300"></i>
+        <span id="timer-display" class="font-mono text-xl">00:00</span>
+      </div>
+      <div class="flex items-center gap-2 bg-teal-800 px-3 py-1 rounded-full">
+        <i class="fas fa-trophy text-yellow-300"></i>
+        <span id="best-time-display" class="font-mono text-xl">--:--</span>
+      </div>
+      <div class="flex items-center gap-2 bg-teal-800 px-3 py-1 rounded-full">
+        <i class="fas fa-puzzle-piece text-green-300"></i>
+        <span id="piece-counter" class="text-xl">0/0</span>
+      </div>
+    </div>
+    <button class="bg-teal-800 p-3 rounded-full hover:bg-teal-900 transition">
+      <i class="fas fa-user-nurse text-xl"></i>
+    </button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 1 — DIFFICULTY SELECTION
+═══════════════════════════════════════════════════════════ -->
+<main id="screen-difficulty"
+      class="screen active flex-col items-center justify-center flex-grow w-full max-w-4xl mx-auto px-4 py-8 gap-8">
+
+  <!-- Hero -->
+  <div class="w-full bg-gradient-to-r from-teal-600 to-teal-800 text-white p-8 rounded-3xl shadow-lg text-center">
+    <div class="flex justify-center mb-4">
+      <div class="bg-white bg-opacity-20 p-5 rounded-full">
+        <i class="fas fa-puzzle-piece text-6xl"></i>
+      </div>
+    </div>
+    <h2 class="text-4xl font-bold mb-2">Jigsaw Explorer 🧩</h2>
+    <p class="text-xl text-teal-100">Drag puzzle pieces together to complete a beautiful picture!</p>
+    <p class="text-lg text-teal-200 mt-1">Each game uses a brand new AI-generated image 🎨</p>
+  </div>
+
+  <!-- Difficulty label -->
+  <div class="text-center">
+    <h3 class="text-3xl font-bold text-teal-800">How hard would you like to play?</h3>
+    <p class="text-xl text-gray-500 mt-1">Choose a level that feels comfortable for you</p>
+  </div>
+
+  <!-- Difficulty cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+
+    <!-- EASY -->
+    <button onclick="startGame(3)"
+      class="diff-card bg-green-50 border-4 border-green-400 p-8 rounded-3xl flex flex-col items-center shadow-md text-center w-full">
+      <div class="bg-green-500 text-white p-5 rounded-full mb-4 shadow">
+        <i class="fas fa-smile text-5xl"></i>
+      </div>
+      <span class="bg-green-100 text-green-700 text-lg font-bold px-4 py-1 rounded-full mb-3">Easy</span>
+      <h4 class="text-3xl font-bold text-green-900">3 × 3</h4>
+      <p class="text-xl text-green-700 mt-2">9 pieces — perfect for beginners!</p>
+      <div class="mt-5 bg-green-500 text-white text-xl font-semibold px-8 py-3 rounded-2xl hover:bg-green-600 transition w-full">
+        <i class="fas fa-play mr-2"></i> Play Easy
+      </div>
+    </button>
+
+    <!-- MEDIUM -->
+    <button onclick="startGame(4)"
+      class="diff-card bg-yellow-50 border-4 border-yellow-400 p-8 rounded-3xl flex flex-col items-center shadow-md text-center w-full">
+      <div class="bg-yellow-500 text-white p-5 rounded-full mb-4 shadow">
+        <i class="fas fa-grin text-5xl"></i>
+      </div>
+      <span class="bg-yellow-100 text-yellow-700 text-lg font-bold px-4 py-1 rounded-full mb-3">Medium</span>
+      <h4 class="text-3xl font-bold text-yellow-900">4 × 4</h4>
+      <p class="text-xl text-yellow-700 mt-2">16 pieces — a fun challenge!</p>
+      <div class="mt-5 bg-yellow-500 text-white text-xl font-semibold px-8 py-3 rounded-2xl hover:bg-yellow-600 transition w-full">
+        <i class="fas fa-play mr-2"></i> Play Medium
+      </div>
+    </button>
+
+    <!-- HARD -->
+    <button onclick="startGame(5)"
+      class="diff-card bg-red-50 border-4 border-red-400 p-8 rounded-3xl flex flex-col items-center shadow-md text-center w-full">
+      <div class="bg-red-500 text-white p-5 rounded-full mb-4 shadow">
+        <i class="fas fa-fire text-5xl"></i>
+      </div>
+      <span class="bg-red-100 text-red-700 text-lg font-bold px-4 py-1 rounded-full mb-3">Hard</span>
+      <h4 class="text-3xl font-bold text-red-900">5 × 5</h4>
+      <p class="text-xl text-red-700 mt-2">25 pieces — for the brave!</p>
+      <div class="mt-5 bg-red-500 text-white text-xl font-semibold px-8 py-3 rounded-2xl hover:bg-red-600 transition w-full">
+        <i class="fas fa-play mr-2"></i> Play Hard
+      </div>
+    </button>
+
+  </div>
+
+  <!-- Tip -->
+  <div class="w-full bg-white border-2 border-teal-100 rounded-2xl p-5 flex items-start gap-4 shadow-sm">
+    <div class="bg-teal-100 text-teal-700 p-3 rounded-full flex-shrink-0">
+      <i class="fas fa-lightbulb text-2xl"></i>
+    </div>
+    <div>
+      <p class="text-xl font-semibold text-teal-800">Tip!</p>
+      <p class="text-lg text-gray-600 mt-1">Press the 👁 Peek button anytime to see what the finished picture looks like. No peeking though! 😄</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 2 — GAME LOADING
+═══════════════════════════════════════════════════════════ -->
+<main id="screen-loading"
+      class="screen flex-col items-center justify-center flex-grow gap-6 text-center px-6">
+  <div class="spinner"></div>
+  <p class="text-2xl font-semibold text-teal-700" id="loading-msg">Generating your picture with AI… 🎨</p>
+  <p class="text-lg text-gray-500">Please wait a moment…</p>
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 3 — GAMEPLAY
+═══════════════════════════════════════════════════════════ -->
+<main id="screen-game"
+      class="screen flex-col flex-grow" style="height: calc(100vh - 80px);">
+
+  <!-- Toolbar -->
+  <div class="bg-white border-b-2 border-teal-100 shadow-sm px-4 py-3 flex flex-wrap gap-3 items-center justify-between">
+    <div class="flex gap-3 flex-wrap">
+      <button id="btn-peek"
+        class="flex items-center gap-2 border-2 border-teal-300 text-teal-700 bg-teal-50 text-xl font-semibold px-5 py-2 rounded-2xl hover:bg-teal-100 transition">
+        <i class="fas fa-eye"></i> Peek at Picture
+      </button>
+      <button id="btn-shuffle"
+        class="flex items-center gap-2 border-2 border-purple-300 text-purple-700 bg-purple-50 text-xl font-semibold px-5 py-2 rounded-2xl hover:bg-purple-100 transition">
+        <i class="fas fa-random"></i> Shuffle
+      </button>
+      <button id="btn-new-image"
+        class="flex items-center gap-2 border-2 border-orange-300 text-orange-700 bg-orange-50 text-xl font-semibold px-5 py-2 rounded-2xl hover:bg-orange-100 transition">
+        <i class="fas fa-image"></i> New Image
+      </button>
+    </div>
+    <div class="text-lg text-gray-500 font-medium" id="difficulty-label"></div>
+  </div>
+
+  <!-- Play area -->
+  <div id="play-area" class="relative flex-grow overflow-hidden">
+    <canvas id="ghost-canvas"></canvas>
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none" style="z-index:8999; display:none;"></canvas>
+    <div id="progress-bar-wrap">
+      <div id="progress-bar"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     COUNTDOWN OVERLAY (3 … 2 … 1 … 🎉)
+═══════════════════════════════════════════════════════════ -->
+<div id="countdown-overlay">
+  <div id="countdown-number"
+    class="text-white font-black"
+    style="font-size: clamp(6rem, 25vw, 14rem); line-height:1; text-shadow: 0 0 40px rgba(255,255,255,.4);">
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     WIN SCREEN / CELEBRATION MODAL
+═══════════════════════════════════════════════════════════ -->
+<div id="win-screen">
+  <canvas id="confetti-canvas-win" class="fixed inset-0 pointer-events-none" style="z-index:8999;"></canvas>
+  <div class="win-card bg-white rounded-3xl shadow-2xl p-8 md:p-12 max-w-lg w-full mx-4 text-center relative z-10">
+
+    <!-- Trophy -->
+    <div class="trophy-anim text-8xl mb-4">🏆</div>
+
+    <!-- Heading -->
+    <h2 class="text-4xl md:text-5xl font-extrabold text-teal-700 mb-2">You Did It! 🎉</h2>
+    <p class="text-xl text-gray-500 mb-6">Brilliant! Every piece locked perfectly in place.</p>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-teal-50 border-2 border-teal-200 rounded-2xl p-4">
+        <div class="text-3xl mb-1">⏱</div>
+        <div class="text-2xl font-bold text-teal-800" id="win-time">--:--</div>
+        <div class="text-base text-gray-500 mt-1 font-semibold uppercase tracking-wide">Time Taken</div>
+      </div>
+      <div class="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4">
+        <div class="text-3xl mb-1">🏆</div>
+        <div class="text-2xl font-bold text-yellow-700" id="win-best-time">--:--</div>
+        <div class="text-base text-gray-500 mt-1 font-semibold uppercase tracking-wide">Best Time</div>
+      </div>
+      <div class="bg-green-50 border-2 border-green-200 rounded-2xl p-4">
+        <div class="text-3xl mb-1">🧩</div>
+        <div class="text-2xl font-bold text-green-700" id="win-pieces">0</div>
+        <div class="text-base text-gray-500 mt-1 font-semibold uppercase tracking-wide">Pieces</div>
+      </div>
+    </div>
+
+    <!-- New best time badge -->
+    <div id="new-best-badge"
+      class="hidden bg-yellow-400 text-yellow-900 text-xl font-bold px-6 py-2 rounded-full mb-4 inline-block">
+      🌟 New Best Time!
+    </div>
+
+    <!-- Action buttons -->
+    <div class="flex flex-col sm:flex-row gap-4 mt-4">
+      <button id="btn-play-again"
+        class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-2xl font-bold py-4 px-6 rounded-2xl transition shadow-md">
+        <i class="fas fa-redo mr-2"></i> Play Again
+      </button>
+      <button id="btn-exit"
+        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-2xl font-bold py-4 px-6 rounded-2xl transition shadow-md">
+        <i class="fas fa-home mr-2"></i> Exit
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+'use strict';
+
+/* ── DOM refs ──────────────────────────────────────────── */
+const screenDiff     = document.getElementById('screen-difficulty');
+const screenLoad     = document.getElementById('screen-loading');
+const screenGame     = document.getElementById('screen-game');
+const loadingMsg     = document.getElementById('loading-msg');
+const gameStatsBar   = document.getElementById('game-stats-bar');
+const playArea       = document.getElementById('play-area');
+const ghostCanvas    = document.getElementById('ghost-canvas');
+const progressWrap   = document.getElementById('progress-bar-wrap');
+const progressBar    = document.getElementById('progress-bar');
+const timerDisp      = document.getElementById('timer-display');
+const bestTimeDisp   = document.getElementById('best-time-display');
+const pieceCounter   = document.getElementById('piece-counter');
+const diffLabel      = document.getElementById('difficulty-label');
+
+const countdownOverlay = document.getElementById('countdown-overlay');
+const countdownNum     = document.getElementById('countdown-number');
+
+const winScreen      = document.getElementById('win-screen');
+const winTime        = document.getElementById('win-time');
+const winBestTime    = document.getElementById('win-best-time');
+const winPieces      = document.getElementById('win-pieces');
+const newBestBadge   = document.getElementById('new-best-badge');
+
+const btnPeek        = document.getElementById('btn-peek');
+const btnShuffle     = document.getElementById('btn-shuffle');
+const btnNewImage    = document.getElementById('btn-new-image');
+const btnPlayAgain   = document.getElementById('btn-play-again');
+const btnExit        = document.getElementById('btn-exit');
+const confettiWin    = document.getElementById('confetti-canvas-win');
+
+/* ── AI Image prompts ──────────────────────────────────── */
+const IMAGE_PROMPTS = [
+  'beautiful himalayan landscape with snow mountains',
+  'colorful field of flowers in bloom at sunrise',
+  'serene lake with mountains and pine trees',
+  'majestic elephant in lush forest',
+  'vibrant Indian village market scene',
+  'peacock displaying feathers in a garden',
+  'golden temple reflecting in water at sunset',
+  'tiger walking through green jungle',
+  'cherry blossom trees along a river path',
+  'ancient Indian architecture with colorful details',
+  'cute baby animals in meadow',
+  'rainbow over green tea gardens',
+  'traditional boat on calm backwaters',
+  'colorful hot air balloons over landscape',
+  'dolphins jumping in blue ocean at sunset',
+];
+
+/* ── State ─────────────────────────────────────────────── */
+let pieces = [], cols = 3, rows = 3;
+let srcImage = null, pieceW = 0, pieceH = 0;
+let snapThreshold = 0;
+let timerInterval = null, elapsedSec = 0, timerRunning = false;
+let snappedCount = 0, totalPieces = 0;
+let dragging = null, peekActive = false, zCounter = 10;
+let confettiParts = [], confettiRAF = null, confettiRAFWin = null;
+let audioCtx = null;
+let currentDifficulty = 3;
+let bestTimes = {}; // keyed by grid size e.g. {3: 120, 4: 240, 5: 360}
+
+/* ── Helpers ───────────────────────────────────────────── */
+const rng = (lo, hi) => lo + Math.random() * (hi - lo);
+const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+/* ── LocalStorage best times ───────────────────────────── */
+function loadBestTimes() {
+  try { bestTimes = JSON.parse(localStorage.getItem('jigsaw_best_times') || '{}'); }
+  catch(_) { bestTimes = {}; }
+}
+function saveBestTimes() {
+  try { localStorage.setItem('jigsaw_best_times', JSON.stringify(bestTimes)); }
+  catch(_) {}
+}
+function getBestTime(grid) { return bestTimes[grid] !== undefined ? bestTimes[grid] : null; }
+function updateBestTime(grid, sec) {
+  const prev = getBestTime(grid);
+  if (prev === null || sec < prev) {
+    bestTimes[grid] = sec;
+    saveBestTimes();
+    return true; // new best!
+  }
+  return false;
+}
+function refreshBestTimeDisplay() {
+  const bt = getBestTime(currentDifficulty);
+  bestTimeDisp.textContent = bt !== null ? fmt(bt) : '--:--';
+}
+
+/* ── Screen switcher ───────────────────────────────────── */
+function showScreen(name) {
+  [screenDiff, screenLoad, screenGame].forEach(s => s.classList.remove('active'));
+  if (name === 'difficulty') { screenDiff.classList.add('active'); gameStatsBar.classList.add('hidden'); }
+  if (name === 'loading')    { screenLoad.classList.add('active'); gameStatsBar.classList.add('hidden'); }
+  if (name === 'game')       { screenGame.classList.add('active'); gameStatsBar.classList.remove('hidden'); }
+}
+
+/* ── Timer ─────────────────────────────────────────────── */
+function startTimer() {
+  if (timerRunning) return;
+  timerRunning = true;
+  timerInterval = setInterval(() => {
+    elapsedSec++;
+    timerDisp.textContent = fmt(elapsedSec);
+  }, 1000);
+}
+function stopTimer()  { clearInterval(timerInterval); timerRunning = false; }
+function resetTimer() { stopTimer(); elapsedSec = 0; timerDisp.textContent = '00:00'; }
+
+/* ── Load image ────────────────────────────────────────── */
+function loadImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => resolve(img);
+    img.onerror = () => reject(new Error('Could not load image.'));
+    img.src = url;
+  });
+}
+
+/* ── Random AI image URL ───────────────────────────────── */
+function getAIImageUrl() {
+  const prompt = IMAGE_PROMPTS[Math.floor(Math.random() * IMAGE_PROMPTS.length)];
+  const seed   = Math.floor(Math.random() * 999999);
+  const enc    = encodeURIComponent(prompt);
+  return `https://image.pollinations.ai/prompt/${enc}?width=800&height=600&nologo=true&seed=${seed}`;
+}
+
+/* ── Tab generation ────────────────────────────────────── */
+function generateTabs(c, r) {
+  const hEdge = Array.from({length: r-1}, () => Array.from({length: c}, () => Math.random()>.5?1:-1));
+  const vEdge = Array.from({length: r},   () => Array.from({length: c-1}, () => Math.random()>.5?1:-1));
+  return Array.from({length: r*c}, (_,i) => {
+    const row = Math.floor(i/c), col = i%c;
+    return {
+      top:    row===0   ? 0 : -hEdge[row-1][col],
+      bottom: row===r-1 ? 0 :  hEdge[row][col],
+      left:   col===0   ? 0 : -vEdge[row][col-1],
+      right:  col===c-1 ? 0 :  vEdge[row][col],
+    };
+  });
+}
+
+/* ── Draw piece path ───────────────────────────────────── */
+function buildPath(ctx, pw, ph, tabs) {
+  function edge(x1,y1,x2,y2,nx,ny,dir) {
+    if (dir===0) { ctx.lineTo(x2,y2); return; }
+    const len = Math.hypot(x2-x1,y2-y1);
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+    const ex=(x2-x1)/len, ey=(y2-y1)/len;
+    const kw=len*0.20, kd=len*0.22*dir;
+    const lx=mx-ex*kw, ly=my-ey*kw;
+    const rx=mx+ex*kw, ry=my+ey*kw;
+    const tx=mx+nx*kd, ty=my+ny*kd;
+    ctx.lineTo(lx,ly);
+    ctx.bezierCurveTo(lx+nx*kd*.6,ly+ny*kd*.6,tx-ex*kw*.5,ty-ey*kw*.5,tx,ty);
+    ctx.bezierCurveTo(tx+ex*kw*.5,ty+ey*kw*.5,rx+nx*kd*.6,ry+ny*kd*.6,rx,ry);
+    ctx.lineTo(x2,y2);
+  }
+  ctx.beginPath(); ctx.moveTo(0,0);
+  edge(0,0,  pw,0,  0,-1, tabs.top);
+  edge(pw,0, pw,ph, 1,0,  tabs.right);
+  edge(pw,ph,0,ph,  0,1,  tabs.bottom);
+  edge(0,ph, 0,0,  -1,0,  tabs.left);
+  ctx.closePath();
+}
+
+/* ── Build puzzle pieces ───────────────────────────────── */
+function buildPuzzle() {
+  clearPieces();
+  resetTimer();
+  snappedCount = 0;
+  zCounter = 10;
+  updateCounters();
+
+  cols = rows = currentDifficulty;
+  totalPieces = cols * rows;
+
+  const areaW = playArea.clientWidth;
+  const areaH = playArea.clientHeight;
+
+  pieceW = srcImage.naturalWidth  / cols;
+  pieceH = srcImage.naturalHeight / rows;
+
+  const scale = Math.min(
+    (areaW * 0.88) / srcImage.naturalWidth,
+    (areaH * 0.88) / srcImage.naturalHeight,
+    1
+  );
+
+  const dpw = Math.round(pieceW * scale);
+  const dph = Math.round(pieceH * scale);
+  const ov  = Math.round(Math.max(dpw,dph) * 0.24);
+
+  snapThreshold = Math.max(dpw,dph) * 0.26;
+
+  const tabDefs = generateTabs(cols, rows);
+
+  // Ghost canvas
+  ghostCanvas.width  = Math.round(srcImage.naturalWidth  * scale);
+  ghostCanvas.height = Math.round(srcImage.naturalHeight * scale);
+  const gctx = ghostCanvas.getContext('2d');
+  gctx.drawImage(srcImage, 0, 0, ghostCanvas.width, ghostCanvas.height);
+
+  const gridOriginX = (areaW - cols * dpw) / 2;
+  const gridOriginY = (areaH - rows * dph) / 2;
+
+  for (let i = 0; i < totalPieces; i++) {
+    const r = Math.floor(i / cols), c = i % cols;
+    const tabs = tabDefs[i];
+    const cvW = dpw + ov*2, cvH = dph + ov*2;
+
+    const cv = document.createElement('canvas');
+    cv.width = cvW; cv.height = cvH;
+    const ctx = cv.getContext('2d');
+
+    ctx.save();
+    ctx.translate(ov, ov);
+    buildPath(ctx, dpw, dph, tabs);
+    ctx.clip();
+    const srcX = c * pieceW - ov/scale;
+    const srcY = r * pieceH - ov/scale;
+    const srcW = pieceW + ov/scale*2;
+    const srcH = pieceH + ov/scale*2;
+    ctx.drawImage(srcImage, srcX, srcY, srcW, srcH, -ov, -ov, cvW, cvH);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(ov, ov);
+    buildPath(ctx, dpw, dph, tabs);
+    ctx.strokeStyle = 'rgba(0,0,0,.35)';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+    ctx.restore();
+
+    const wrap = document.createElement('div');
+    wrap.className = 'piece-wrap';
+    wrap.style.width  = cvW + 'px';
+    wrap.style.height = cvH + 'px';
+    wrap.appendChild(cv);
+    playArea.appendChild(wrap);
+
+    const solvedX = gridOriginX + c * dpw - ov;
+    const solvedY = gridOriginY + r * dph - ov;
+
+    const piece = {
+      idx:i, r, c, wrap, cv, tabs, dpw, dph, ov,
+      solvedX, solvedY,
+      x: rng(0, Math.max(0, areaW - cvW)),
+      y: rng(0, Math.max(0, areaH - cvH)),
+      snapped: false, z: zCounter++,
+    };
+    setPos(piece);
+    addDrag(piece);
+    pieces.push(piece);
+  }
+
+  totalPieces = pieces.length;
+  updateCounters();
+}
+
+function setPos(p) {
+  p.wrap.style.left   = p.x + 'px';
+  p.wrap.style.top    = p.y + 'px';
+  p.wrap.style.zIndex = p.z;
+}
+
+function clearPieces() {
+  pieces.forEach(p => p.wrap.remove());
+  pieces = []; zCounter = 10;
+  if (peekActive) {
+    peekActive = false;
+    ghostCanvas.classList.remove('visible');
+    btnPeek.classList.remove('active');
+  }
+}
+
+function updateCounters() {
+  pieceCounter.textContent = `${snappedCount}/${totalPieces}`;
+  const pct = totalPieces ? (snappedCount / totalPieces * 100) : 0;
+  progressBar.style.width = pct + '%';
+}
+
+/* ── Drag & Drop ───────────────────────────────────────── */
+function addDrag(piece) {
+  piece.wrap.addEventListener('mousedown',  e => startDrag(e, piece, e.clientX, e.clientY));
+  piece.wrap.addEventListener('touchstart', e => {
+    e.preventDefault();
+    startDrag(e, piece, e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: false });
+}
+
+function startDrag(e, piece, cx, cy) {
+  if (piece.snapped) return;
+  e.preventDefault();
+  startTimer();
+
+  const rect = piece.wrap.getBoundingClientRect();
+  dragging = { piece, ox: cx - rect.left, oy: cy - rect.top };
+  piece.z = zCounter++;
+  piece.wrap.style.zIndex = piece.z;
+  piece.wrap.classList.add('dragging');
+
+  document.addEventListener('mousemove',  onMove);
+  document.addEventListener('mouseup',    onEnd);
+  document.addEventListener('touchmove',  onTouchMove, { passive: false });
+  document.addEventListener('touchend',   onEnd);
+}
+
+const onMove      = e => doMove(e.clientX, e.clientY);
+const onTouchMove = e => { e.preventDefault(); doMove(e.touches[0].clientX, e.touches[0].clientY); };
+
+function doMove(cx, cy) {
+  if (!dragging) return;
+  const { piece, ox, oy } = dragging;
+  const r = playArea.getBoundingClientRect();
+  piece.x = cx - r.left - ox;
+  piece.y = cy - r.top  - oy;
+  setPos(piece);
+}
+
+function onEnd() {
+  if (!dragging) return;
+  dragging.piece.wrap.classList.remove('dragging');
+  trySnap(dragging.piece);
+  dragging = null;
+  document.removeEventListener('mousemove',  onMove);
+  document.removeEventListener('mouseup',    onEnd);
+  document.removeEventListener('touchmove',  onTouchMove);
+  document.removeEventListener('touchend',   onEnd);
+}
+
+/* ── Snap logic ────────────────────────────────────────── */
+function trySnap(piece) {
+  if (piece.snapped) return;
+  if (Math.hypot(piece.x - piece.solvedX, piece.y - piece.solvedY) < snapThreshold) {
+    doSnap(piece); return;
+  }
+  for (const other of pieces) {
+    if (!other.snapped || other === piece) continue;
+    const dr = Math.abs(piece.r - other.r), dc = Math.abs(piece.c - other.c);
+    if (dr + dc !== 1) continue;
+    const ex = other.solvedX + (piece.c - other.c) * piece.dpw;
+    const ey = other.solvedY + (piece.r - other.r) * piece.dph;
+    if (Math.hypot(piece.x - ex, piece.y - ey) < snapThreshold) {
+      doSnap(piece); return;
+    }
+  }
+}
+
+function doSnap(piece) {
+  piece.snapped = true;
+  piece.x = piece.solvedX; piece.y = piece.solvedY;
+  piece.z = 1;
+  setPos(piece);
+  piece.wrap.classList.add('snapped');
+  piece.wrap.style.zIndex = 1;
+  snappedCount++;
+  updateCounters();
+  showSnapRing(piece);
+  playSnap();
+  if (snappedCount === totalPieces) setTimeout(onPuzzleComplete, 400);
+}
+
+function showSnapRing(piece) {
+  const ring = document.createElement('div');
+  ring.className = 'snap-ring';
+  const pr = piece.wrap.getBoundingClientRect();
+  const ar = playArea.getBoundingClientRect();
+  ring.style.cssText = `left:${pr.left-ar.left}px;top:${pr.top-ar.top}px;width:${pr.width}px;height:${pr.height}px`;
+  playArea.appendChild(ring);
+  setTimeout(() => ring.remove(), 460);
+}
+
+/* ── Audio ─────────────────────────────────────────────── */
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playSnap() {
+  try {
+    const ac = getAudio();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.frequency.setValueAtTime(900, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(450, ac.currentTime+.09);
+    g.gain.setValueAtTime(.14, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, ac.currentTime+.16);
+    o.start(); o.stop(ac.currentTime+.16);
+  } catch(_){}
+}
+function playCountdownBeep(freq) {
+  try {
+    const ac = getAudio();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.connect(g); g.connect(ac.destination);
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(.25, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, ac.currentTime+.25);
+    o.start(); o.stop(ac.currentTime+.25);
+  } catch(_){}
+}
+function playWin() {
+  try {
+    const ac = getAudio();
+    [523.25,659.25,783.99,1046.5,1318.5].forEach((f,i) => {
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.type='sine'; o.connect(g); g.connect(ac.destination);
+      const t=ac.currentTime+i*.15;
+      o.frequency.value=f;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(.22,t+.05);
+      g.gain.exponentialRampToValueAtTime(.001,t+.45);
+      o.start(t); o.stop(t+.45);
+    });
+  } catch(_){}
+}
+
+/* ── Confetti ───────────────────────────────────────────── */
+function startConfetti(canvas) {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+  const parts = Array.from({length: 150}, () => ({
+    x: rng(0, canvas.width), y: rng(-canvas.height, 0),
+    r: rng(6,14), d: rng(2,5),
+    color: `hsl(${rng(0,360)},80%,60%)`,
+    tiltAngle: rng(0,360), tiltSpeed: rng(.1,.5),
+  }));
+  function draw() {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    parts.forEach(p => {
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.tiltAngle*Math.PI/180);
+      ctx.fillStyle=p.color; ctx.beginPath();
+      ctx.ellipse(0,0,p.r/2,p.r,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      p.y+=p.d; p.tiltAngle+=p.tiltSpeed; p.x+=Math.sin(p.tiltAngle)*1.5;
+      if(p.y>canvas.height){p.y=-20;p.x=rng(0,canvas.width);}
+    });
+    confettiRAFWin = requestAnimationFrame(draw);
+  }
+  draw();
+}
+function stopConfetti() {
+  if(confettiRAFWin) { cancelAnimationFrame(confettiRAFWin); confettiRAFWin=null; }
+  try {
+    [confettiWin].forEach(c => { c.style.display='none'; const ctx=c.getContext('2d'); if(ctx) ctx.clearRect(0,0,c.width,c.height); });
+  } catch(_){}
+}
+
+/* ── Countdown animation ────────────────────────────────── */
+function showCountdown(callback) {
+  const nums = ['3', '2', '1', '🎉'];
+  const freqs = [440, 494, 523, 1047];
+  let i = 0;
+
+  countdownOverlay.classList.add('show');
+
+  function step() {
+    if (i >= nums.length) {
+      countdownOverlay.classList.remove('show');
+      countdownNum.textContent = '';
+      callback();
+      return;
+    }
+    countdownNum.textContent = nums[i];
+    countdownNum.style.animation = 'none';
+    // force reflow
+    void countdownNum.offsetWidth;
+    countdownNum.style.animation = 'countPop 0.9s ease-out forwards';
+    playCountdownBeep(freqs[i]);
+    i++;
+    setTimeout(step, 950);
+  }
+  step();
+}
+
+/* ── On puzzle complete ─────────────────────────────────── */
+function onPuzzleComplete() {
+  stopTimer();
+  const timeTaken = elapsedSec;
+  const isNewBest = updateBestTime(currentDifficulty, timeTaken);
+
+  // show countdown, then win screen
+  showCountdown(() => {
+    // Fill win screen
+    winTime.textContent     = fmt(timeTaken);
+    winPieces.textContent   = totalPieces;
+    const bt = getBestTime(currentDifficulty);
+    winBestTime.textContent = bt !== null ? fmt(bt) : '--:--';
+    newBestBadge.classList.toggle('hidden', !isNewBest);
+
+    // Show win screen & confetti
+    winScreen.classList.add('show');
+    startConfetti(confettiWin);
+    playWin();
+  });
+}
+
+/* ── Entry point: start game ────────────────────────────── */
+window.startGame = async function(grid) {
+  currentDifficulty = grid;
+  showScreen('loading');
+  stopConfetti();
+
+  const diffNames = {3:'Easy (3×3)', 4:'Medium (4×4)', 5:'Hard (5×5)'};
+  diffLabel.textContent = '🎮 ' + diffNames[grid];
+
+  loadingMsg.textContent = 'Generating your picture with AI… 🎨';
+
+  const url = getAIImageUrl();
+  try {
+    srcImage = await loadImage(url);
+  } catch(_) {
+    // fallback to picsum
+    loadingMsg.textContent = 'Using a beautiful backup image… 🖼';
+    try {
+      const seed = Math.floor(Math.random() * 999);
+      srcImage = await loadImage(`https://picsum.photos/seed/${seed}/800/600`);
+    } catch(e) {
+      alert('Could not load image. Please check your internet connection.');
+      showScreen('difficulty');
+      return;
+    }
+  }
+
+  showScreen('game');
+  // short delay to let layout render
+  setTimeout(() => {
+    buildPuzzle();
+    refreshBestTimeDisplay();
+  }, 80);
+};
+
+/* ── Button handlers ────────────────────────────────────── */
+btnPeek.addEventListener('click', () => {
+  peekActive = !peekActive;
+  ghostCanvas.classList.toggle('visible', peekActive);
+  btnPeek.classList.toggle('active', peekActive);
+});
+
+btnShuffle.addEventListener('click', () => {
+  const aw=playArea.clientWidth, ah=playArea.clientHeight;
+  pieces.forEach(p => {
+    if(p.snapped) return;
+    p.x=rng(0,Math.max(0,aw-p.cv.width));
+    p.y=rng(0,Math.max(0,ah-p.cv.height));
+    setPos(p);
+  });
+});
+
+btnNewImage.addEventListener('click', () => {
+  if (!confirm('Load a brand new AI image? Your current progress will be lost.')) return;
+  startGame(currentDifficulty);
+});
+
+btnPlayAgain.addEventListener('click', () => {
+  winScreen.classList.remove('show');
+  stopConfetti();
+  // back to difficulty screen
+  showScreen('difficulty');
+});
+
+btnExit.addEventListener('click', () => {
+  window.location.href = 'games.html';
+});
+
+window.addEventListener('resize', () => {
+  confettiWin.width  = window.innerWidth;
+  confettiWin.height = window.innerHeight;
+});
+
+/* ── Keyboard shortcuts ─────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement.tagName;
+  if(tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA') return;
+  if(e.key==='p'||e.key==='P') btnPeek.click();
+  if(e.key==='s'||e.key==='S') btnShuffle.click();
+});
+
+/* ── Init ───────────────────────────────────────────────── */
+loadBestTimes();
+showScreen('difficulty');
+
+})();
+</script>
+</body>
+</html>

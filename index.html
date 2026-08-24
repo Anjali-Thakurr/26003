@@ -19,13 +19,71 @@
         .btn-large:hover {
             transform: scale(1.05);
         }
-        .voice-btn {
-            animation: pulse 2s infinite;
+        .rating-card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
         }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(74, 222, 128, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+
+        .rating-card h2 {
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            font-size: 24px;
+        }
+
+        .rating-card p {
+            color: #666666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .stars {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .star {
+            font-size: 35px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.1s ease;
+        }
+
+        .star:hover {
+            transform: scale(1.15);
+        }
+
+        /* Active gold state for selected stars */
+        .star.active {
+            color: #ffcc00;
+        }
+
+        .submit-btn {
+            background: #007bff;
+            color: #ffffff;
+            border: none;
+            padding: 12px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            background: #0056b3;
+        }
+
+        .submit-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -35,7 +93,7 @@
     <header class="bg-teal-700 text-white p-4 shadow-md sticky top-0 z-50">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <i class="fas fa-brain text-3xl"></i>
+                <i class="fas fa-brain text-6xl"></i>
                 <h1 class="text-3xl font-bold">Ministry of Development of North Eastern Region (MDoNER)</h1>
             </div>
             <div class="flex items-center space-x-4">
@@ -94,13 +152,20 @@
                 <p class="text-xl text-orange-700 mt-2 text-center">Schedule & activities</p>
             </button>
         </div>
-    </main>
+        <div class="rating-card bg-white p-6 rounded-2xl shadow-sm border-2 border-indigo-100 mb-8">
+            <h2 class="text-3xl font-bold text-indigo-800 mb-4">Rate Us</h2>
+            <p class="text-lg text-gray-700 mb-4">Your feedback helps us improve. How was your experience?</p>
+            <div class="stars flex justify-center space-x-2 mb-4" id="star-container">
+                <span class="star text-3xl text-gray-400 cursor-pointer" data-value="1">&#9733;</span>
+                <span class="star text-3xl text-gray-400 cursor-pointer" data-value="2">&#9733;</span>
+                <span class="star text-3xl text-gray-400 cursor-pointer" data-value="3">&#9733;</span>
+                <span class="star text-3xl text-gray-400 cursor-pointer" data-value="4">&#9733;</span>
+                <span class="star text-3xl text-gray-400 cursor-pointer" data-value="5">&#9733;</span>
+            </div>
+            <button class="btn-large bg-green-100 border-4 border-green-400 w-full max-w-xs mx-auto text-center text-xl font-bold text-green-900 py-3 rounded-3xl hover:bg-green-200 disabled:opacity-50" id="submit-rating" disabled>Submit Review</button>
+        </div>
 
-    <div class="fixed bottom-8 right-8 z-50">
-        <button class="voice-btn bg-green-500 hover:bg-green-600 text-white rounded-full p-6 shadow-2xl flex items-center justify-center border-4 border-green-300">
-            <i class="fas fa-microphone text-4xl"></i>
-        </button>
-    </div>
+    </main>
 
     <script>
         function updateTime() {
@@ -110,6 +175,40 @@
         }
         updateTime();
         setInterval(updateTime, 60000);
+         const stars = document.querySelectorAll('.star');
+        const submitBtn = document.getElementById('submit-rating');
+        let selectedRating = 0;
+
+        // Highlight stars on click
+        stars.forEach((star, index) => {
+            star.addEventListener('click', () => {
+                selectedRating = index + 1;
+                updateStars(selectedRating);
+                submitBtn.disabled = false; // Enable button once a rating is chosen
+            });
+        });
+
+        // Function to update visual state of stars
+        function updateStars(rating) {
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+
+        // Action when user clicks submit
+        submitBtn.addEventListener('click', () => {
+            alert(`Thank you! You rated us ${selectedRating} out of 5 stars.`);
+            
+            // Optional: Send data to your server here via fetch() API
+            // Reset state
+            selectedRating = 0;
+            updateStars(0);
+            submitBtn.disabled = true;
+        });
     </script>
 </body>
 </html>

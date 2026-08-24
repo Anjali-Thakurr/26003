@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>2048 - Math Puzzle | MDoNER</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+  <style>
+    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background-color: #fdfbf7; color: #1a202c; }
+
+    /* ── SCREENS ── */
+    .screen { display:none; }
+    .screen.active { display:flex; }
+
+    /* ── BOARD ── */
+    .board-bg { background:#4a7c75; border-radius:14px; padding:10px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; max-width:460px; aspect-ratio:1; position:relative; }
+    .cell-bg  { background:rgba(255,255,255,0.18); border-radius:8px; aspect-ratio:1; width:100%; }
+    .tile-layer { position:absolute; inset:10px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; pointer-events:none; }
+
+    .tile { border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:900; overflow:hidden; }
+    .tile .tval { font-size:clamp(.9rem,4.5vw,1.9rem); line-height:1; }
+    .tile .teq  { font-size:clamp(.38rem,1.5vw,.62rem); opacity:.7; margin-top:3px; font-weight:700; }
+
+    @keyframes pop-in    { 0%{transform:scale(0);opacity:0} 60%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+    @keyframes merge-pls { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 70%{transform:scale(.95)} 100%{transform:scale(1)} }
+    .tile.new    { animation:pop-in .2s cubic-bezier(.34,1.56,.64,1) both; }
+    .tile.merged { animation:merge-pls .22s ease both; }
+
+    /* tile palette – warm tones blending with teal header */
+    .t2    { background:#eee4da; color:#776e65; }
+    .t4    { background:#ede0c8; color:#776e65; }
+    .t8    { background:#f2b179; color:#fff; }
+    .t16   { background:#f59563; color:#fff; }
+    .t32   { background:#f67c5f; color:#fff; }
+    .t64   { background:#f65e3b; color:#fff; }
+    .t128  { background:#edcf72; color:#fff; box-shadow:0 0 16px 4px rgba(237,207,114,.45); }
+    .t256  { background:#edcc61; color:#fff; box-shadow:0 0 20px 6px rgba(237,204,97,.5); }
+    .t512  { background:#edc850; color:#fff; box-shadow:0 0 24px 7px rgba(237,200,80,.55); }
+    .t1024 { background:#2d9c8e; color:#fff; box-shadow:0 0 28px 8px rgba(45,156,142,.55); }
+    .t2048 { background:#0f766e; color:#fff; box-shadow:0 0 36px 12px rgba(15,118,110,.65); }
+    .tsuper{ background:#1a202c; color:#fff; }
+
+    /* score pop */
+    @keyframes spop { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-26px)} }
+    .spop { position:absolute; top:-14px; right:4px; font-size:.8rem; font-weight:800; color:#0f766e; animation:spop .65s ease forwards; pointer-events:none; z-index:30; }
+
+    /* game-over shake */
+    @keyframes shake {
+      0%,100%{transform:translateX(0)}
+      15%{transform:translateX(-10px)}
+      30%{transform:translateX(10px)}
+      45%{transform:translateX(-8px)}
+      60%{transform:translateX(8px)}
+      75%{transform:translateX(-5px)}
+      90%{transform:translateX(5px)}
+    }
+    .shake { animation:shake .55s ease; }
+
+    /* confetti burst for win */
+    @keyframes confetti-fall {
+      0%   { transform:translateY(-20px) rotate(0deg); opacity:1; }
+      100% { transform:translateY(120px) rotate(720deg); opacity:0; }
+    }
+    .confetti-piece {
+      position:absolute;
+      width:10px; height:10px;
+      border-radius:2px;
+      animation:confetti-fall 1s ease-out forwards;
+    }
+
+    /* fade-in for overlays */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up { animation:fadeUp .4s ease both; }
+
+    /* instruction card hover */
+    .instr-card { transition:transform .2s, box-shadow .2s; }
+    .instr-card:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(0,0,0,.13); }
+
+    @media(max-width:380px) {
+      .board-bg { padding:7px; gap:7px; }
+      .tile-layer { inset:7px; gap:7px; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="bg-teal-700 text-white p-4 shadow-md sticky top-0 z-50">
+  <div class="max-w-2xl mx-auto flex justify-between items-center">
+    <div class="flex items-center space-x-3">
+      <i class="fas fa-brain text-4xl"></i>
+      <div>
+        <h1 class="text-xl font-bold leading-tight">MDoNER</h1>
+        <p class="text-teal-200 text-sm">Ministry of Development of NE Region</p>
+      </div>
+    </div>
+    <a href="index.html" class="flex items-center gap-2 bg-teal-800 hover:bg-teal-900 transition px-4 py-2 rounded-xl text-sm font-semibold">
+      <i class="fas fa-home"></i> Home
+    </a>
+  </div>
+</header>
+
+<!-- ══════════ SCREEN 1 – INSTRUCTIONS (Elder-Friendly) ══════════ -->
+<main id="screenIntro" class="screen active flex-grow flex-col items-center justify-center p-4 w-full max-w-2xl mx-auto">
+
+  <div class="fade-up w-full">
+
+    <!-- Title -->
+    <div class="text-center bg-teal-700 rounded-3xl shadow-lg p-8 mb-6">
+      <div class="text-7xl mb-3">🧩</div>
+      <h2 class="text-5xl font-black text-white mb-2">2048</h2>
+      <p class="text-teal-100 text-2xl font-semibold">A Fun Number Game!</p>
+    </div>
+
+    <!-- Big numbered steps -->
+    <h3 class="text-2xl font-black text-teal-800 mb-4 text-center">📖 How To Play</h3>
+
+    <div class="flex flex-col gap-4 mb-6">
+
+      <!-- Step 1 -->
+      <div class="bg-white rounded-2xl shadow border-2 border-teal-100 p-5 flex items-center gap-5">
+        <div class="flex-shrink-0 w-16 h-16 bg-teal-600 text-white rounded-full flex items-center justify-center text-3xl font-black shadow">1</div>
+        <div>
+          <p class="text-3xl mb-1">👆  Swipe or Press Arrow Keys</p>
+          <p class="text-gray-600 text-xl leading-snug">Move all the tiles <strong>Left, Right, Up or Down</strong> on the board.</p>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="bg-white rounded-2xl shadow border-2 border-teal-100 p-5 flex items-center gap-5">
+        <div class="flex-shrink-0 w-16 h-16 bg-orange-500 text-white rounded-full flex items-center justify-center text-3xl font-black shadow">2</div>
+        <div>
+          <p class="text-3xl mb-1">🔗  Same Numbers Join!</p>
+          <p class="text-gray-600 text-xl leading-snug">When two tiles with the <strong>same number</strong> touch, they <strong>add up</strong> into one tile.<br>
+            <span class="inline-block mt-1 bg-orange-100 text-orange-800 font-black text-xl px-4 py-1 rounded-full">2 + 2 = 4 &nbsp;·&nbsp; 4 + 4 = 8</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="bg-white rounded-2xl shadow border-2 border-teal-100 p-5 flex items-center gap-5">
+        <div class="flex-shrink-0 w-16 h-16 bg-yellow-500 text-white rounded-full flex items-center justify-center text-3xl font-black shadow">3</div>
+        <div>
+          <p class="text-3xl mb-1">🏆  Reach 2048 to Win!</p>
+          <p class="text-gray-600 text-xl leading-snug">Keep merging until you make the big <strong>2048</strong> tile. That is your victory!</p>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="bg-white rounded-2xl shadow border-2 border-red-100 p-5 flex items-center gap-5">
+        <div class="flex-shrink-0 w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-3xl font-black shadow">4</div>
+        <div>
+          <p class="text-3xl mb-1">😟  Game Ends When…</p>
+          <p class="text-gray-600 text-xl leading-snug">The board is <strong>full</strong> and no two matching tiles are next to each other. Don't worry — you can always <strong>try again!</strong></p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Tip box -->
+    <div class="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-5 mb-7 flex items-start gap-4">
+      <span class="text-4xl flex-shrink-0">💡</span>
+      <p class="text-yellow-900 text-xl font-semibold leading-snug">
+        <strong>Helpful Tip:</strong> Try to keep your biggest number in one corner and build the other numbers around it!
+      </p>
+    </div>
+
+    <!-- BIG Start button -->
+    <button id="btnStart" class="w-full bg-teal-700 hover:bg-teal-800 active:scale-95 transition text-white text-3xl font-black py-7 rounded-3xl shadow-xl flex items-center justify-center gap-4">
+      <i class="fas fa-play-circle text-4xl"></i> Let's Play!
+    </button>
+
+  </div>
+</main>
+
+<!-- ══════════ SCREEN 2 – GAME ══════════ -->
+<main id="screenGame" class="screen flex-grow flex-col items-center p-4 w-full max-w-2xl mx-auto">
+
+  <!-- Score row -->
+  <div class="w-full max-w-[460px] flex items-center justify-between mb-3">
+    <h2 class="text-2xl font-black text-teal-800">2048</h2>
+    <div class="flex gap-3">
+      <div class="bg-teal-700 text-white rounded-xl px-4 py-2 text-center min-w-[80px] relative" id="scoreBox">
+        <div class="text-xs font-bold uppercase tracking-widest opacity-80">Score</div>
+        <div class="text-xl font-black" id="scoreVal">0</div>
+      </div>
+      <div class="bg-teal-800 text-white rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-xs font-bold uppercase tracking-widest opacity-80">Best</div>
+        <div class="text-xl font-black" id="bestVal">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action row -->
+  <div class="w-full max-w-[460px] flex gap-2 mb-3 flex-wrap">
+    <button id="btnMath" class="flex-1 flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 active:scale-95 transition text-white font-bold rounded-xl py-2 text-sm">
+      <i class="fas fa-square-root-variable"></i> Math Mode
+    </button>
+    <button id="btnRestart" class="flex-1 flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 active:scale-95 transition text-white font-bold rounded-xl py-2 text-sm">
+      <i class="fas fa-rotate-right"></i> Restart
+    </button>
+    <button id="btnExit" class="flex-1 flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 active:scale-95 transition text-white font-bold rounded-xl py-2 text-sm">
+      <i class="fas fa-door-open"></i> Exit
+    </button>
+  </div>
+
+  <!-- Math banner -->
+  <div id="mathBanner" class="hidden w-full max-w-[460px] bg-yellow-50 border-2 border-yellow-400 rounded-xl px-4 py-2 mb-3 text-yellow-800 text-sm font-semibold text-center">
+    📐 <strong>Math Mode ON</strong> — Each tile shows <em>n/2 + n/2</em>, the equation that created it.
+  </div>
+
+  <!-- Board wrapper -->
+  <div class="relative w-full max-w-[460px]" id="boardWrap">
+
+    <!-- WIN overlay -->
+    <div id="winOverlay" class="hidden absolute inset-0 z-20 rounded-2xl bg-teal-700/90 flex-col items-center justify-center gap-4 text-white text-center p-6" style="backdrop-filter:blur(4px)">
+      <div id="confettiZone" class="absolute inset-0 overflow-hidden pointer-events-none rounded-2xl"></div>
+      <div class="text-6xl mb-1">🎉</div>
+      <h3 class="text-4xl font-black fade-up">You Win!</h3>
+      <p class="text-teal-200 fade-up">You reached the 2048 tile!</p>
+      <div class="flex gap-3 mt-2 flex-wrap justify-center fade-up">
+        <button id="btnKeepPlaying" class="bg-white text-teal-700 font-bold px-6 py-3 rounded-xl hover:bg-teal-50 active:scale-95 transition">Keep Playing</button>
+        <button id="btnWinNew"      class="bg-teal-900 text-white font-bold px-6 py-3 rounded-xl hover:bg-black/50 active:scale-95 transition">New Game</button>
+      </div>
+    </div>
+
+    <!-- GAME OVER overlay -->
+    <div id="gameOverOverlay" class="hidden absolute inset-0 z-20 rounded-2xl flex-col items-center justify-center gap-4 text-center p-6" style="background:rgba(26,32,44,0.92);backdrop-filter:blur(5px)">
+      <div class="text-5xl mb-1 fade-up">💔</div>
+      <h3 class="text-4xl font-black text-white fade-up">Game Over!</h3>
+      <p class="text-gray-300 text-sm fade-up">No more moves left.</p>
+      <!-- Score display inside game over -->
+      <div class="flex gap-4 mt-2 fade-up">
+        <div class="bg-white/10 rounded-2xl px-6 py-3 text-center">
+          <div class="text-gray-400 text-xs uppercase tracking-widest font-bold">Your Score</div>
+          <div class="text-3xl font-black text-white" id="goScore">0</div>
+        </div>
+        <div class="bg-teal-700/60 rounded-2xl px-6 py-3 text-center">
+          <div class="text-teal-300 text-xs uppercase tracking-widest font-bold">Best Score</div>
+          <div class="text-3xl font-black text-white" id="goBest">0</div>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-3 flex-wrap justify-center fade-up">
+        <button id="btnGoRestart" class="bg-teal-600 hover:bg-teal-700 active:scale-95 transition text-white font-bold px-6 py-3 rounded-xl flex items-center gap-2">
+          <i class="fas fa-rotate-right"></i> Try Again
+        </button>
+        <button id="btnGoExit" class="bg-gray-600 hover:bg-gray-700 active:scale-95 transition text-white font-bold px-6 py-3 rounded-xl flex items-center gap-2">
+          <i class="fas fa-door-open"></i> Exit
+        </button>
+      </div>
+    </div>
+
+    <!-- The actual grid -->
+    <div class="board-bg" id="board">
+      <div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div>
+      <div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div>
+      <div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div>
+      <div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div>
+      <div class="tile-layer" id="tileLayer"></div>
+    </div>
+  </div>
+
+  <!-- Mini how-to -->
+  <p class="text-gray-400 text-xs mt-4 text-center max-w-[460px]">
+    <i class="fas fa-keyboard mr-1"></i>Arrow keys or swipe to slide &nbsp;·&nbsp; Matching tiles merge &nbsp;·&nbsp; Reach 2048!
+  </p>
+</main>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer class="bg-teal-700 text-teal-200 text-center text-sm py-3 mt-6">
+  © 2024 MDoNER — Ministry of Development of North Eastern Region
+</footer>
+
+<script>
+(function(){
+  var S = 4;
+  var grid=[], score=0, mathMode=false, won=false, keepPlaying=false;
+  var best = parseInt(localStorage.getItem("2048best")||"0",10);
+
+  /* DOM */
+  var tileLayer      = document.getElementById("tileLayer");
+  var scoreValEl     = document.getElementById("scoreVal");
+  var bestValEl      = document.getElementById("bestVal");
+  var scoreBoxEl     = document.getElementById("scoreBox");
+  var winOverlay     = document.getElementById("winOverlay");
+  var gameOverOvr    = document.getElementById("gameOverOverlay");
+  var mathBanner     = document.getElementById("mathBanner");
+  var btnMath        = document.getElementById("btnMath");
+  var boardEl        = document.getElementById("board");
+  var boardWrap      = document.getElementById("boardWrap");
+  var confettiZone   = document.getElementById("confettiZone");
+
+  bestValEl.textContent = best;
+  document.getElementById("goBest").textContent = best;
+
+  /* ── SCREEN SWITCH ── */
+  function showScreen(id){
+    ["screenIntro","screenGame"].forEach(function(s){
+      var el=document.getElementById(s);
+      el.classList.remove("active");
+      el.style.display="";
+    });
+    var t=document.getElementById(id);
+    t.classList.add("active");
+    t.style.display="flex";
+  }
+
+  document.getElementById("btnStart").addEventListener("click", function(){
+    showScreen("screenGame");
+    startGame();
+  });
+
+  /* ── GAME ── */
+  function startGame(){
+    grid=[];
+    for(var i=0;i<S;i++) grid.push([0,0,0,0]);
+    score=0; won=false; keepPlaying=false;
+    scoreValEl.textContent=0;
+    winOverlay.classList.add("hidden"); winOverlay.style.display="";
+    gameOverOvr.classList.add("hidden"); gameOverOvr.style.display="";
+    spawn(); spawn();
+    renderBoard(null,null);
+  }
+
+  function spawn(){
+    var e=[];
+    for(var r=0;r<S;r++) for(var c=0;c<S;c++) if(!grid[r][c]) e.push([r,c]);
+    if(!e.length) return null;
+    var p=e[Math.floor(Math.random()*e.length)];
+    grid[p[0]][p[1]]=Math.random()<.85?2:4;
+    return p;
+  }
+
+  /* ── RENDER ── */
+  function tCls(v){ return v<=2048?"t"+v:"tsuper"; }
+
+  function renderBoard(newPos, mergedSet){
+    tileLayer.innerHTML="";
+    for(var r=0;r<S;r++){
+      for(var c=0;c<S;c++){
+        var v=grid[r][c]; if(!v) continue;
+        var tile=document.createElement("div");
+        tile.className="tile "+tCls(v);
+        tile.style.gridRow=r+1; tile.style.gridColumn=c+1;
+        var vs=document.createElement("span"); vs.className="tval"; vs.textContent=v;
+        tile.appendChild(vs);
+        if(mathMode && v>=4){
+          var h=v/2;
+          var es=document.createElement("span"); es.className="teq"; es.textContent=h+"+"+h;
+          tile.appendChild(es);
+        }
+        if(newPos && newPos[0]===r && newPos[1]===c) tile.classList.add("new");
+        if(mergedSet && mergedSet[r+"-"+c]) tile.classList.add("merged");
+        tileLayer.appendChild(tile);
+      }
+    }
+  }
+
+  /* ── SCORE ── */
+  function addScore(pts){
+    score+=pts;
+    if(score>best){ best=score; localStorage.setItem("2048best",best); bestValEl.textContent=best; }
+    scoreValEl.textContent=score;
+    var pop=document.createElement("span"); pop.className="spop"; pop.textContent="+"+pts;
+    scoreBoxEl.style.position="relative"; scoreBoxEl.appendChild(pop);
+    pop.addEventListener("animationend",function(){pop.remove();});
+  }
+
+  /* ── SLIDE ── */
+  function slideRow(row){
+    var arr=row.filter(function(x){return x!==0;}); var gain=0; var mi={};
+    for(var i=0;i<arr.length-1;i++){
+      if(arr[i]===arr[i+1]&&!mi[i]){ arr[i]*=2; gain+=arr[i]; arr.splice(i+1,1); mi[i]=true; }
+    }
+    while(arr.length<S) arr.push(0);
+    return{row:arr,gain:gain};
+  }
+  function tp(g){ var o=[]; for(var c=0;c<S;c++){var col=[]; for(var r=0;r<S;r++) col.push(g[r][c]); o.push(col);} return o; }
+  function cp(g){ return g.map(function(r){return r.slice();}); }
+  function eq(a,b){ for(var r=0;r<S;r++) for(var c=0;c<S;c++) if(a[r][c]!==b[r][c]) return false; return true; }
+
+  function move(dir){
+    var prev=cp(grid), g=cp(grid), tot=0, ms={};
+    if(dir==="left"){
+      for(var r=0;r<S;r++){var res=slideRow(g[r]);g[r]=res.row;tot+=res.gain;}
+    } else if(dir==="right"){
+      for(var r=0;r<S;r++){var res=slideRow(g[r].slice().reverse());g[r]=res.row.reverse();tot+=res.gain;}
+    } else if(dir==="up"){
+      g=tp(g); for(var r=0;r<S;r++){var res=slideRow(g[r]);g[r]=res.row;tot+=res.gain;} g=tp(g);
+    } else if(dir==="down"){
+      g=tp(g); for(var r=0;r<S;r++){var res=slideRow(g[r].slice().reverse());g[r]=res.row.reverse();tot+=res.gain;} g=tp(g);
+    }
+    if(eq(prev,g)) return;
+    for(var r=0;r<S;r++) for(var c=0;c<S;c++) if(g[r][c]!==prev[r][c]&&g[r][c]) ms[r+"-"+c]=true;
+    grid=g;
+    if(tot) addScore(tot);
+    var np=spawn();
+    renderBoard(np,ms);
+
+    if(!won&&!keepPlaying){
+      for(var r=0;r<S;r++) for(var c=0;c<S;c++) if(grid[r][c]===2048){
+        won=true; setTimeout(function(){showWin();},300); return;
+      }
+    }
+    if(isGameOver()) setTimeout(function(){showGameOver();},350);
+  }
+
+  function isGameOver(){
+    for(var r=0;r<S;r++) for(var c=0;c<S;c++){
+      if(!grid[r][c]) return false;
+      if(c<S-1&&grid[r][c]===grid[r][c+1]) return false;
+      if(r<S-1&&grid[r][c]===grid[r+1][c]) return false;
+    }
+    return true;
+  }
+
+  /* ── WIN ── */
+  function showWin(){
+    confettiZone.innerHTML="";
+    var colors=["#34d399","#fbbf24","#f87171","#60a5fa","#a78bfa","#fb923c"];
+    for(var i=0;i<30;i++){
+      var p=document.createElement("div");
+      p.className="confetti-piece";
+      p.style.left=Math.random()*100+"%";
+      p.style.top="-10px";
+      p.style.background=colors[Math.floor(Math.random()*colors.length)];
+      p.style.animationDelay=(Math.random()*0.7)+"s";
+      p.style.transform="rotate("+Math.random()*360+"deg)";
+      confettiZone.appendChild(p);
+    }
+    winOverlay.classList.remove("hidden");
+    winOverlay.style.display="flex";
+  }
+
+  /* ── GAME OVER ── */
+  function showGameOver(){
+    document.getElementById("goScore").textContent=score;
+    document.getElementById("goBest").textContent=best;
+    /* shake the board */
+    boardEl.classList.remove("shake");
+    void boardEl.offsetWidth;
+    boardEl.classList.add("shake");
+    setTimeout(function(){
+      gameOverOvr.classList.remove("hidden");
+      gameOverOvr.style.display="flex";
+    },450);
+  }
+
+  /* ── EXIT ── */
+  function exitGame(){ showScreen("screenIntro"); }
+
+  /* ── BUTTONS ── */
+  document.getElementById("btnStart").addEventListener("click",function(){showScreen("screenGame");startGame();});
+  document.getElementById("btnRestart").addEventListener("click",startGame);
+  document.getElementById("btnExit").addEventListener("click",exitGame);
+  document.getElementById("btnKeepPlaying").addEventListener("click",function(){keepPlaying=true;winOverlay.classList.add("hidden");winOverlay.style.display="";});
+  document.getElementById("btnWinNew").addEventListener("click",startGame);
+  document.getElementById("btnGoRestart").addEventListener("click",startGame);
+  document.getElementById("btnGoExit").addEventListener("click",exitGame);
+
+  btnMath.addEventListener("click",function(){
+    mathMode=!mathMode;
+    btnMath.classList.toggle("bg-yellow-400",!mathMode);
+    btnMath.classList.toggle("bg-orange-500",mathMode);
+    btnMath.innerHTML=mathMode
+      ?"<i class=\"fas fa-square-root-variable\"></i> Math Mode ✓"
+      :"<i class=\"fas fa-square-root-variable\"></i> Math Mode";
+    mathBanner.classList.toggle("hidden",!mathMode);
+    renderBoard(null,null);
+  });
+
+  /* ── KEYBOARD ── */
+  var km={ArrowLeft:"left",ArrowRight:"right",ArrowUp:"up",ArrowDown:"down"};
+  document.addEventListener("keydown",function(e){
+    if(!km[e.key]) return; e.preventDefault();
+    if(!document.getElementById("screenGame").classList.contains("active")) return;
+    if(winOverlay.style.display==="flex"&&!keepPlaying) return;
+    if(gameOverOvr.style.display==="flex") return;
+    move(km[e.key]);
+  });
+
+  /* ── TOUCH ── */
+  var tx=0,ty=0;
+  document.addEventListener("touchstart",function(e){tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  document.addEventListener("touchend",function(e){
+    if(!document.getElementById("screenGame").classList.contains("active")) return;
+    if(winOverlay.style.display==="flex"&&!keepPlaying) return;
+    if(gameOverOvr.style.display==="flex") return;
+    var dx=e.changedTouches[0].clientX-tx, dy=e.changedTouches[0].clientY-ty;
+    if(Math.max(Math.abs(dx),Math.abs(dy))<28) return;
+    if(Math.abs(dx)>Math.abs(dy)) move(dx>0?"right":"left");
+    else move(dy>0?"down":"up");
+  },{passive:true});
+}());
+</script>
+</body>
+</html>
