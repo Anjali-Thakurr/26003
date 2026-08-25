@@ -53,13 +53,16 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-grow w-full max-w-4xl mx-auto p-4 flex flex-col space-y-8 mt-4">
+    <main class="flex-grow w-full max-w-4xl mx-auto p-4 flex flex-col space-y-8 mt-4 pb-12">
         
         <!-- Daily Progress -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border-2 border-green-200 flex flex-col md:flex-row justify-between items-center">
             <div class="w-full md:w-2/3">
                 <h2 class="text-2xl font-bold text-green-800 mb-2"><i class="fas fa-chart-line"></i> Daily Progress</h2>
-                <p class="text-lg text-gray-600 mb-3" id="completion-rate">0% of tasks completed today. Let's get started!</p>
+                <div class="flex items-end space-x-3 mb-3">
+                    <span class="text-5xl font-black text-green-600" id="progress-percent-text">0%</span>
+                    <span class="text-lg text-gray-600 pb-1" id="completion-rate">of tasks marked as done for today.</span>
+                </div>
                 <div class="w-full bg-gray-200 rounded-full h-4">
                     <div class="bg-green-500 h-4 rounded-full transition-all duration-500" id="progress-bar-fill" style="width: 0%"></div>
                 </div>
@@ -94,6 +97,32 @@
                 <!-- Completed tasks injected here -->
                 <div id="empty-done-state" class="text-center py-4 text-gray-400 italic">
                     No tasks completed yet today.
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Tasks Section -->
+        <div class="pt-8 border-t-2 border-gray-100">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Upcoming Tasks</h2>
+            <div id="upcoming-tasks" class="space-y-4 opacity-80">
+                <div id="empty-upcoming-state" class="text-center py-4 text-gray-400 italic hidden">
+                    No upcoming tasks scheduled.
+                </div>
+            </div>
+        </div>
+
+        <!-- Special Days Section -->
+        <div class="pt-8 border-t-2 border-gray-100">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-gray-800"><i class="fas fa-gift text-pink-500 mr-2"></i> Special Days</h2>
+                <button onclick="openSpecialModal()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full shadow-md text-lg haptic transition">
+                    <i class="fas fa-plus mr-2"></i> Add Special Day
+                </button>
+            </div>
+            <div id="special-days-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- special days list -->
+                <div id="empty-special-state" class="col-span-1 md:col-span-2 text-center py-4 text-gray-400 italic hidden">
+                    No special days or birthdays added yet.
                 </div>
             </div>
         </div>
@@ -139,9 +168,31 @@
         </div>
     </div>
 
+    <!-- Special Day Modal -->
+    <div id="special-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl m-4">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6" id="special-modal-title">New Special Day</h2>
+            <form id="special-form" onsubmit="saveSpecialDay(event)">
+                <input type="hidden" id="special-id">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Event Name</label>
+                    <input type="text" id="special-name" required class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-pink-500 focus:outline-none text-xl" placeholder="e.g. Maria's Birthday">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Date</label>
+                    <input type="date" id="special-date" required class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-pink-500 focus:outline-none text-xl">
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="closeSpecialModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl text-lg">Cancel</button>
+                    <button type="submit" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-xl text-lg">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // Set today's date as default in modal
         document.getElementById('task-date').valueAsDate = new Date();
+        document.getElementById('special-date').valueAsDate = new Date();
 
         function getIconForTask(name) {
             const n = name.toLowerCase();
@@ -196,7 +247,6 @@
             let tasks = [];
 
             if (!storedTasks) {
-                // Initialize default tasks on first load
                 tasks = DEFAULT_TASKS.map((t, i) => {
                     const theme = getIconForTask(t.name);
                     return {
@@ -219,51 +269,51 @@
             }
 
             if (lastDate && lastDate !== today) {
-                // New day logic: reset 'completed' for recurring tasks, clear one-off past tasks
-                    tasks = tasks.filter(t => {
-                    return t.repeat !== 'None' || t.date >= todayFormatted;
-                });
-                
+                // Keep upcoming tasks, reset daily recurring tasks completion
+                tasks = tasks.filter(t => t.repeat !== 'None' || t.date >= todayFormatted);
                 tasks.forEach(t => {
                     if (t.repeat !== 'None') {
                         t.completed = false;
                     }
                 });
-
                 localStorage.setItem('lastDate', today);
                 localStorage.setItem('userTasks', JSON.stringify(tasks));
             }
 
             renderTasks();
+            renderSpecialDays();
         }
 
         function renderTasks() {
             const tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
             const activeContainer = document.getElementById('active-tasks');
             const doneContainer = document.getElementById('completed-tasks');
+            const upcomingContainer = document.getElementById('upcoming-tasks');
+            
             const emptyState = document.getElementById('empty-state');
             const emptyDoneState = document.getElementById('empty-done-state');
+            const emptyUpcomingState = document.getElementById('empty-upcoming-state');
 
-            // Clear containers (except empty states)
             activeContainer.innerHTML = '';
             doneContainer.innerHTML = '';
+            upcomingContainer.innerHTML = '';
 
             let activeCount = 0;
             let doneCount = 0;
+            let upcomingCount = 0;
 
             const todayFormatted = new Date().toISOString().split('T')[0];
 
-            // Sort tasks by time
-                tasks.sort((a, b) => a.time.localeCompare(b.time));
+            tasks.sort((a, b) => a.time.localeCompare(b.time));
 
             tasks.forEach(task => {
-                // Ensure legacy tasks have emoji
                 if(!task.emoji) {
                     const theme = getIconForTask(task.name);
                     task.emoji = theme.emoji;
                 }
 
                 if (task.date === todayFormatted || task.repeat === 'Daily') {
+                    // It's a task for today (only count these for progress)
                     if (task.completed) {
                         doneContainer.appendChild(createCompletedCard(task));
                         doneCount++;
@@ -271,34 +321,62 @@
                         activeContainer.appendChild(createActiveCard(task));
                         activeCount++;
                     }
+                } else if (task.date > todayFormatted) {
+                    // It's a task for the future (do not count for today's progress)
+                    upcomingContainer.appendChild(createUpcomingCard(task));
+                    upcomingCount++;
                 }
             });
 
             // Handle empty states
-            if (activeCount === 0) {
-                activeContainer.appendChild(emptyState);
+            activeCount === 0 ? (activeContainer.appendChild(emptyState), emptyState.classList.remove('hidden')) : emptyState.classList.add('hidden');
+            doneCount === 0 ? (doneContainer.appendChild(emptyDoneState), emptyDoneState.classList.remove('hidden')) : emptyDoneState.classList.add('hidden');
+            upcomingCount === 0 ? (upcomingContainer.appendChild(emptyUpcomingState), emptyUpcomingState.classList.remove('hidden')) : emptyUpcomingState.classList.add('hidden');
+
+            // Only pass today's counts to updateProgress
+            updateProgress(doneCount, activeCount + doneCount);
+        }
+
+        function renderSpecialDays() {
+            const days = JSON.parse(localStorage.getItem('specialDays') || '[]');
+            const container = document.getElementById('special-days-container');
+            const emptyState = document.getElementById('empty-special-state');
+            container.innerHTML = '';
+
+            days.sort((a, b) => a.date.localeCompare(b.date));
+
+            if (days.length === 0) {
+                container.appendChild(emptyState);
                 emptyState.classList.remove('hidden');
             } else {
                 emptyState.classList.add('hidden');
+                days.forEach(day => {
+                    // Format date nicely (e.g. Oct 15)
+                    const d = new Date(day.date);
+                    const formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+                    
+                    const div = document.createElement('div');
+                    div.className = "bg-pink-50 border-2 border-pink-200 rounded-2xl p-4 flex justify-between items-center shadow-sm";
+                    div.innerHTML = `
+                        <div>
+                            <h4 class="text-xl font-bold text-pink-900">${day.name}</h4>
+                            <p class="text-lg text-pink-700"><i class="fas fa-calendar-alt mr-2"></i>${formattedDate}</p>
+                        </div>
+                        <div class="flex space-x-1">
+                            <button onclick="editSpecialDay('${day.id}')" class="text-gray-400 hover:text-blue-500 p-3 transition"><i class="fas fa-edit text-xl"></i></button>
+                            <button onclick="deleteSpecialDay('${day.id}')" class="text-gray-400 hover:text-red-500 p-3 transition"><i class="fas fa-trash text-xl"></i></button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
             }
-
-            if (doneCount === 0) {
-                doneContainer.appendChild(emptyDoneState);
-                emptyDoneState.classList.remove('hidden');
-            } else {
-                emptyDoneState.classList.add('hidden');
-            }
-
-            updateProgress(doneCount, activeCount + doneCount);
         }
 
         function createActiveCard(task) {
             const div = document.createElement('div');
             div.className = `task-card bg-${task.color}-50 border-4 border-${task.color}-300 rounded-3xl p-6 shadow-lg flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6 relative`;
             div.id = `task-${task.id}`;
-            
             const repeatBadge = task.repeat !== 'None' ? `<span class="bg-${task.color}-200 text-${task.color}-800 text-sm px-3 py-1 rounded-full ml-2 font-bold">${task.repeat}</span>` : '';
-
             div.innerHTML = `
                 <div class="bg-${task.color}-500 text-white p-6 rounded-full visual-cue flex-shrink-0">
                     <i class="fas ${task.icon} text-5xl"></i>
@@ -339,23 +417,47 @@
             return div;
         }
 
+        function createUpcomingCard(task) {
+            const div = document.createElement('div');
+            div.className = `bg-white border-2 border-${task.color}-200 rounded-2xl p-4 flex justify-between items-center shadow-sm`;
+            // format date for upcoming
+            const d = new Date(task.date);
+            const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+            div.innerHTML = `
+                <div class="flex items-center space-x-4">
+                    <div class="bg-${task.color}-100 text-${task.color}-500 p-4 rounded-full flex-shrink-0">
+                        <i class="fas ${task.icon} text-2xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-gray-700">${task.emoji} ${task.name}</h4>
+                        <p class="text-md text-gray-500 font-medium">${dateStr} at ${task.timeStr}</p>
+                    </div>
+                </div>
+                <button onclick="deleteTask('${task.id}')" class="text-gray-400 hover:text-red-500 p-2"><i class="fas fa-trash"></i></button>
+            `;
+            return div;
+        }
+
         let hasCelebrated = false;
 
         function updateProgress(completed, total) {
             let percent = total === 0 ? 0 : Math.round((completed / total) * 100);
             const rateText = document.getElementById('completion-rate');
+            const percentText = document.getElementById('progress-percent-text');
             
+            percentText.innerText = `${percent}%`;
+
             if (total === 0) {
                 rateText.innerText = "No tasks assigned for today.";
                 hasCelebrated = false;
             } else if (percent === 100) {
-                rateText.innerText = "100% completed! Amazing job today! 🎉";
+                rateText.innerText = "of tasks marked as done for today. Amazing job! 🎉";
                 if (!hasCelebrated) {
                     triggerConfetti();
                     hasCelebrated = true;
                 }
             } else {
-                rateText.innerText = `${percent}% of tasks completed today. Keep it up!`;
+                rateText.innerText = `of tasks marked as done for today.`;
                 hasCelebrated = false;
             }
             
@@ -365,54 +467,36 @@
         function triggerConfetti() {
             var duration = 3 * 1000;
             var end = Date.now() + duration;
-
             (function frame() {
-                confetti({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#22c55e', '#3b82f6', '#eab308', '#a855f7']
-                });
-                confetti({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: ['#22c55e', '#3b82f6', '#eab308', '#a855f7']
-                });
-
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#22c55e', '#3b82f6', '#eab308', '#a855f7'] });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#22c55e', '#3b82f6', '#eab308', '#a855f7'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
 
         function completeTask(taskId) {
             if (navigator.vibrate) navigator.vibrate(50);
             playTone();
-
-            // Show motivation
             const toast = document.getElementById('toast');
             toast.classList.remove('opacity-0');
             setTimeout(() => toast.classList.add('opacity-0'), 3000);
-
-            // Update data
             let tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
             const taskIndex = tasks.findIndex(t => t.id === taskId);
             if (taskIndex > -1) {
                 tasks[taskIndex].completed = true;
                 localStorage.setItem('userTasks', JSON.stringify(tasks));
-                
-                // Visually animate out, then re-render
                 const card = document.getElementById(`task-${taskId}`);
                 card.style.transform = 'scale(0.95)';
                 card.style.opacity = '0';
-                
-                setTimeout(() => {
-                    renderTasks();
-                }, 300);
+                setTimeout(() => { renderTasks(); }, 300);
             }
+        }
+
+        function deleteTask(taskId) {
+            let tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
+            tasks = tasks.filter(t => t.id !== taskId);
+            localStorage.setItem('userTasks', JSON.stringify(tasks));
+            renderTasks();
         }
 
         function playTone() {
@@ -429,9 +513,10 @@
                 gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
                 osc.start();
                 osc.stop(ctx.currentTime + 0.5);
-            } catch (e) { console.error("Audio API not supported"); }
+            } catch (e) { }
         }
 
+        // Add Reminder Modal Logic
         function openModal() {
             document.getElementById('add-modal').classList.remove('hidden');
         }
@@ -448,39 +533,81 @@
             const date = document.getElementById('task-date').value;
             let time = document.getElementById('task-time').value;
             const repeat = document.getElementById('task-repeat').value;
-
-            // Format Time
             let [hours, minutes] = time.split(':');
             let ampm = hours >= 12 ? 'PM' : 'AM';
             hours = hours % 12;
             hours = hours ? hours : 12; 
             const timeStr = `${hours}:${minutes} ${ampm}`;
-
-            // AI-like Icon selection
             const theme = getIconForTask(name);
 
             const task = {
                 id: Date.now().toString(),
-                name,
-                date,
-                timeStr,
-                time,
-                repeat,
-                icon: theme.icon,
-                color: theme.color,
-                emoji: theme.emoji,
+                name, date, timeStr, time, repeat,
+                icon: theme.icon, color: theme.color, emoji: theme.emoji,
                 completed: false
             };
             
             let tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
             tasks.push(task);
             localStorage.setItem('userTasks', JSON.stringify(tasks));
-            
             closeModal();
             renderTasks();
         }
 
-        // Initialize on load
+        // Special Day Modal Logic
+        function openSpecialModal() {
+            document.getElementById('special-id').value = '';
+            document.getElementById('special-form').reset();
+            document.getElementById('special-date').valueAsDate = new Date();
+            document.getElementById('special-modal-title').innerText = 'New Special Day';
+            document.getElementById('special-modal').classList.remove('hidden');
+        }
+
+        function closeSpecialModal() {
+            document.getElementById('special-modal').classList.add('hidden');
+        }
+
+        function saveSpecialDay(event) {
+            event.preventDefault();
+            const id = document.getElementById('special-id').value || Date.now().toString();
+            const name = document.getElementById('special-name').value;
+            const date = document.getElementById('special-date').value;
+
+            let days = JSON.parse(localStorage.getItem('specialDays') || '[]');
+            
+            const existingIndex = days.findIndex(d => d.id === id);
+            if (existingIndex > -1) {
+                days[existingIndex] = { id, name, date };
+            } else {
+                days.push({ id, name, date });
+            }
+
+            localStorage.setItem('specialDays', JSON.stringify(days));
+            closeSpecialModal();
+            renderSpecialDays();
+        }
+
+        function deleteSpecialDay(id) {
+            if(confirm("Are you sure you want to remove this special day?")) {
+                let days = JSON.parse(localStorage.getItem('specialDays') || '[]');
+                days = days.filter(d => d.id !== id);
+                localStorage.setItem('specialDays', JSON.stringify(days));
+                renderSpecialDays();
+            }
+        }
+
+        function editSpecialDay(id) {
+            let days = JSON.parse(localStorage.getItem('specialDays') || '[]');
+            const day = days.find(d => d.id === id);
+            if (day) {
+                document.getElementById('special-id').value = day.id;
+                document.getElementById('special-name').value = day.name;
+                document.getElementById('special-date').value = day.date;
+                document.getElementById('special-modal-title').innerText = 'Edit Special Day';
+                document.getElementById('special-modal').classList.remove('hidden');
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
