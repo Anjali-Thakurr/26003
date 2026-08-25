@@ -6,6 +6,7 @@
     <title>Reminders - MDoNER</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -144,33 +145,85 @@
 
         function getIconForTask(name) {
             const n = name.toLowerCase();
-            if (n.includes('water') || n.includes('drink')) return { icon: 'fa-glass-water', color: 'blue' };
-            if (n.includes('pill') || n.includes('medicine') || n.includes('med')) return { icon: 'fa-pills', color: 'rose' };
-            if (n.includes('walk') || n.includes('exercise') || n.includes('yoga')) return { icon: 'fa-walking', color: 'orange' };
-            if (n.includes('doctor') || n.includes('appointment') || n.includes('clinic')) return { icon: 'fa-user-md', color: 'teal' };
-            if (n.includes('sleep') || n.includes('bed') || n.includes('night')) return { icon: 'fa-bed', color: 'indigo' };
-            if (n.includes('eat') || n.includes('food') || n.includes('breakfast') || n.includes('lunch') || n.includes('dinner')) return { icon: 'fa-utensils', color: 'yellow' };
-            if (n.includes('call') || n.includes('phone') || n.includes('family')) return { icon: 'fa-phone', color: 'purple' };
-            if (n.includes('game') || n.includes('play')) return { icon: 'fa-gamepad', color: 'purple' };
-            if (n.includes('read') || n.includes('book')) return { icon: 'fa-book-open', color: 'emerald' };
-            return { icon: 'fa-bell', color: 'gray' };
+            let emoji = '📌';
+            let icon = 'fa-bell';
+            let color = 'gray';
+
+            if (n.includes('water') || n.includes('drink') || n.includes('hydrat')) {
+                emoji = '💧'; icon = 'fa-droplet'; color = 'blue';
+            } else if (n.includes('pill') || n.includes('medic') || n.includes('blood pressure') || n.includes('cholesterol')) {
+                emoji = '💊'; icon = 'fa-pills'; color = 'rose';
+            } else if (n.includes('walk') || n.includes('exercise') || n.includes('stretch') || n.includes('leg') || n.includes('mobil')) {
+                emoji = '🚶'; icon = 'fa-walking'; color = 'orange';
+            } else if (n.includes('doctor') || n.includes('appointment') || n.includes('clinic')) {
+                emoji = '👨‍⚕️'; icon = 'fa-user-md'; color = 'teal';
+            } else if (n.includes('sleep') || n.includes('bed') || n.includes('night')) {
+                emoji = '🛌'; icon = 'fa-bed'; color = 'indigo';
+            } else if (n.includes('eat') || n.includes('food') || n.includes('breakfast') || n.includes('lunch') || n.includes('dinner')) {
+                emoji = '🍽️'; icon = 'fa-utensils'; color = 'yellow';
+            } else if (n.includes('call') || n.includes('phone') || n.includes('family') || n.includes('text') || n.includes('check in')) {
+                emoji = '📱'; icon = 'fa-phone'; color = 'purple';
+            } else if (n.includes('game') || n.includes('play') || n.includes('puzzle')) {
+                emoji = '🧩'; icon = 'fa-gamepad'; color = 'purple';
+            } else if (n.includes('read') || n.includes('book') || n.includes('listen') || n.includes('music')) {
+                emoji = '📖'; icon = 'fa-book-open'; color = 'emerald';
+            } else if (n.includes('door') || n.includes('lock') || n.includes('mail') || n.includes('stove') || n.includes('porch') || n.includes('safe')) {
+                emoji = '🔒'; icon = 'fa-lock'; color = 'gray';
+            }
+            
+            return { icon, color, emoji };
         }
+
+        const DEFAULT_TASKS = [
+            { name: "Take morning blood pressure medication with food.", time: "08:30", timeStr: "8:30 AM", repeat: "Daily" },
+            { name: "Drink a full glass of water (stay hydrated).", time: "14:00", timeStr: "2:00 PM", repeat: "Daily" },
+            { name: "Take evening cholesterol or heart medication.", time: "20:00", timeStr: "8:00 PM", repeat: "Daily" },
+            { name: "Stand up, stretch your legs, and do 5 ankle circles.", time: "10:30", timeStr: "10:30 AM", repeat: "Daily" },
+            { name: "Go for a short, safe walk or do seated exercises.", time: "15:30", timeStr: "3:30 PM", repeat: "Daily" },
+            { name: "Check the front door to ensure mail/packages are brought inside.", time: "12:00", timeStr: "12:00 PM", repeat: "Daily" },
+            { name: "Lock the front and back doors and turn on porch lights.", time: "18:30", timeStr: "6:30 PM", repeat: "Daily" },
+            { name: "Check that the stove is completely off before going to bed.", time: "21:30", timeStr: "9:30 PM", repeat: "Daily" },
+            { name: "Call or text a family member or friend to check in.", time: "11:00", timeStr: "11:00 AM", repeat: "Daily" },
+            { name: "Spend 20 minutes reading, doing a puzzle, or listening to music.", time: "16:00", timeStr: "4:00 PM", repeat: "Daily" }
+        ];
 
         function initApp() {
             const today = new Date().toDateString();
             const lastDate = localStorage.getItem('lastDate');
+            const todayFormatted = new Date().toISOString().split('T')[0];
             
-            let tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
+            let storedTasks = localStorage.getItem('userTasks');
+            let tasks = [];
 
-            if (lastDate !== today) {
+            if (!storedTasks) {
+                // Initialize default tasks on first load
+                tasks = DEFAULT_TASKS.map((t, i) => {
+                    const theme = getIconForTask(t.name);
+                    return {
+                        id: 'default-' + i,
+                        name: t.name,
+                        date: todayFormatted,
+                        timeStr: t.timeStr,
+                        time: t.time,
+                        repeat: t.repeat,
+                        icon: theme.icon,
+                        color: theme.color,
+                        emoji: theme.emoji,
+                        completed: false
+                    };
+                });
+                localStorage.setItem('userTasks', JSON.stringify(tasks));
+                localStorage.setItem('lastDate', today);
+            } else {
+                tasks = JSON.parse(storedTasks);
+            }
+
+            if (lastDate && lastDate !== today) {
                 // New day logic: reset 'completed' for recurring tasks, clear one-off past tasks
-                const todayFormatted = new Date().toISOString().split('T')[0];
-                tasks = tasks.filter(t => {
-                    // keep if it's daily, weekly, monthly OR if the date is >= today
+                    tasks = tasks.filter(t => {
                     return t.repeat !== 'None' || t.date >= todayFormatted;
                 });
                 
-                // Uncheck completed for recurring tasks
                 tasks.forEach(t => {
                     if (t.repeat !== 'None') {
                         t.completed = false;
@@ -200,9 +253,16 @@
 
             const todayFormatted = new Date().toISOString().split('T')[0];
 
+            // Sort tasks by time
+                tasks.sort((a, b) => a.time.localeCompare(b.time));
+
             tasks.forEach(task => {
-                // Determine if task should show today
-                // Simple logic: show if date is today, or if it's Daily. (Omit complex Weekly/Monthly logic for now)
+                // Ensure legacy tasks have emoji
+                if(!task.emoji) {
+                    const theme = getIconForTask(task.name);
+                    task.emoji = theme.emoji;
+                }
+
                 if (task.date === todayFormatted || task.repeat === 'Daily') {
                     if (task.completed) {
                         doneContainer.appendChild(createCompletedCard(task));
@@ -244,7 +304,7 @@
                     <i class="fas ${task.icon} text-5xl"></i>
                 </div>
                 <div class="flex-grow text-center md:text-left w-full">
-                    <h3 class="text-3xl font-bold text-${task.color}-900 mb-1">${task.name}</h3>
+                    <h3 class="text-3xl font-bold text-${task.color}-900 mb-1">${task.emoji} ${task.name}</h3>
                     <p class="text-xl text-${task.color}-800 flex items-center justify-center md:justify-start">
                         <i class="fas fa-clock mr-2"></i> ${task.timeStr} ${repeatBadge}
                     </p>
@@ -269,7 +329,7 @@
                     <i class="fas ${task.icon} text-3xl"></i>
                 </div>
                 <div class="flex-grow">
-                    <h4 class="text-2xl font-bold text-gray-600 line-through">${task.name}</h4>
+                    <h4 class="text-2xl font-bold text-gray-600 line-through">${task.emoji} ${task.name}</h4>
                     <p class="text-lg text-gray-500">${task.timeStr}</p>
                 </div>
                 <div class="text-green-600 font-bold text-xl flex items-center pr-4">
@@ -279,19 +339,53 @@
             return div;
         }
 
+        let hasCelebrated = false;
+
         function updateProgress(completed, total) {
             let percent = total === 0 ? 0 : Math.round((completed / total) * 100);
             const rateText = document.getElementById('completion-rate');
             
             if (total === 0) {
                 rateText.innerText = "No tasks assigned for today.";
+                hasCelebrated = false;
             } else if (percent === 100) {
                 rateText.innerText = "100% completed! Amazing job today! 🎉";
+                if (!hasCelebrated) {
+                    triggerConfetti();
+                    hasCelebrated = true;
+                }
             } else {
                 rateText.innerText = `${percent}% of tasks completed today. Keep it up!`;
+                hasCelebrated = false;
             }
             
             document.getElementById('progress-bar-fill').style.width = `${percent}%`;
+        }
+
+        function triggerConfetti() {
+            var duration = 3 * 1000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#22c55e', '#3b82f6', '#eab308', '#a855f7']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#22c55e', '#3b82f6', '#eab308', '#a855f7']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
         }
 
         function completeTask(taskId) {
@@ -374,6 +468,7 @@
                 repeat,
                 icon: theme.icon,
                 color: theme.color,
+                emoji: theme.emoji,
                 completed: false
             };
             

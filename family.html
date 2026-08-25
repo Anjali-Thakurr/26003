@@ -67,53 +67,23 @@
             
             <!-- Quick Contacts (Call / Message) -->
             <div class="md:col-span-12 bg-sky-50 border-4 border-sky-300 p-6 rounded-3xl shadow-md">
-                <h3 class="text-3xl font-bold text-sky-900 mb-4"><i class="fas fa-address-book text-sky-600 mr-2"></i>Quick Contacts</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Contact 1 -->
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-sky-200 flex items-center justify-between">
-                        <div class="flex items-center space-x-4">
-                            <img src="https://i.pravatar.cc/150?img=47" class="w-16 h-16 rounded-full border-2 border-sky-300">
-                            <div>
-                                <h4 class="text-2xl font-bold text-gray-800">Sarah (Daughter)</h4>
-                                <p class="text-lg text-gray-500 font-mono">+1 (555) 123-4567</p>
-                            </div>
-                        </div>
-                        <div class="flex space-x-3">
-                            <a href="tel:+15551234567" class="bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center hover:bg-green-600 transition shadow-md btn-large" title="Call Sarah">
-                                <i class="fas fa-phone-alt text-2xl"></i>
-                            </a>
-                            <a href="sms:+15551234567" class="bg-blue-500 text-white w-14 h-14 rounded-full flex items-center justify-center hover:bg-blue-600 transition shadow-md btn-large" title="Message Sarah">
-                                <i class="fas fa-comment-dots text-2xl"></i>
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Contact 2 -->
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-sky-200 flex items-center justify-between">
-                        <div class="flex items-center space-x-4">
-                            <img src="https://i.pravatar.cc/150?img=11" class="w-16 h-16 rounded-full border-2 border-sky-300">
-                            <div>
-                                <h4 class="text-2xl font-bold text-gray-800">Mark (Son)</h4>
-                                <p class="text-lg text-gray-500 font-mono">+1 (555) 987-6543</p>
-                            </div>
-                        </div>
-                        <div class="flex space-x-3">
-                            <a href="tel:+15559876543" class="bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center hover:bg-green-600 transition shadow-md btn-large" title="Call Mark">
-                                <i class="fas fa-phone-alt text-2xl"></i>
-                            </a>
-                            <a href="sms:+15559876543" class="bg-blue-500 text-white w-14 h-14 rounded-full flex items-center justify-center hover:bg-blue-600 transition shadow-md btn-large" title="Message Mark">
-                                <i class="fas fa-comment-dots text-2xl"></i>
-                            </a>
-                        </div>
-                    </div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-3xl font-bold text-sky-900"><i class="fas fa-address-book text-sky-600 mr-2"></i>Quick Contacts</h3>
+                    <button onclick="openContactModal()" class="bg-sky-500 text-white px-4 py-2 rounded-xl font-bold hover:bg-sky-600 transition shadow-sm flex items-center">
+                        <i class="fas fa-plus mr-2"></i>Add Contact
+                    </button>
+                </div>
+                <div id="contacts-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Contacts rendered via JavaScript -->
                 </div>
             </div>
 
             <!-- Messages & Voice Notes Inbox -->
             <div class="md:col-span-6 bg-emerald-50 border-4 border-emerald-300 p-6 rounded-3xl shadow-md">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-3xl font-bold text-emerald-900"><i class="fas fa-inbox text-emerald-600 mr-2"></i>Recent Messages</h3>
+                    <h3 class="text-3xl font-bold text-emerald-900"><i class="fas fa-inbox text-emerald-600 mr-2"></i>Inbox</h3>
                 </div>
-                <div class="space-y-4">
+                <div class="space-y-4 max-h-64 overflow-y-auto pr-2">
                     <!-- Message Item -->
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex items-start space-x-4">
                         <img src="https://i.pravatar.cc/150?img=47" alt="Sarah" class="w-16 h-16 rounded-full border-2 border-emerald-300 shadow-sm">
@@ -137,6 +107,19 @@
                                 <span class="text-sm text-gray-500 font-bold pr-2">0:15</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Send Message Area -->
+                <div class="mt-6 bg-emerald-100 p-4 rounded-2xl border-2 border-emerald-200 border-dashed">
+                    <h4 class="text-lg font-bold text-emerald-800 mb-2"><i class="fas fa-paper-plane mr-2"></i>Send Message to Family</h4>
+                    <div class="flex flex-col space-y-3">
+                        <select id="msg-recipient" class="p-2 rounded-xl border border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg">
+                            <option value="all">Broadcast to All Family</option>
+                            <!-- Dynamically populated by JS -->
+                        </select>
+                        <textarea id="msg-text" placeholder="Type your message here..." class="p-2 rounded-xl border border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none h-20 text-lg"></textarea>
+                        <button id="send-msg-btn" onclick="sendMessage()" class="bg-emerald-500 text-white px-6 py-2 rounded-xl font-bold hover:bg-emerald-600 transition shadow-sm self-end text-lg">Send Message</button>
                     </div>
                 </div>
             </div>
@@ -255,11 +238,167 @@
                     <p class="text-lg font-bold text-indigo-700 bg-indigo-100 py-3 rounded-xl border border-indigo-200">Thanks for sharing! We'll let your family know.</p>
                 </div>
             </div>
-
         </div>
     </main>
 
+    <!-- Modals -->
+    <div id="contact-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full mx-4 border-4 border-sky-300">
+            <h3 id="modal-title" class="text-3xl font-bold text-sky-900 mb-6">Add Contact</h3>
+            <input type="hidden" id="contact-id">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 font-bold mb-2 text-xl">Name</label>
+                    <input type="text" id="contact-name" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-sky-500 text-lg" placeholder="e.g., Sarah (Daughter)">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-bold mb-2 text-xl">Phone Number</label>
+                    <input type="tel" id="contact-phone" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-sky-500 text-lg" placeholder="+1 (555) 123-4567">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-4 mt-8">
+                <button onclick="closeContactModal()" class="px-6 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 text-lg transition">Cancel</button>
+                <button onclick="saveContact()" class="px-6 py-3 rounded-xl font-bold text-white bg-sky-500 hover:bg-sky-600 text-lg transition shadow-md">Save Contact</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // State
+        let contacts = [
+            { id: 1, name: 'Sarah (Daughter)', phone: '+1 (555) 123-4567', avatar: 'https://i.pravatar.cc/150?img=47' },
+            { id: 2, name: 'Mark (Son)', phone: '+1 (555) 987-6543', avatar: 'https://i.pravatar.cc/150?img=11' }
+        ];
+
+        function renderContacts() {
+            const container = document.getElementById('contacts-container');
+            const select = document.getElementById('msg-recipient');
+            
+            container.innerHTML = '';
+            
+            // Reset select dropdown
+            select.innerHTML = '<option value="all">Broadcast to All Family</option>';
+
+            contacts.forEach(contact => {
+                // Add to dropdown
+                const option = document.createElement('option');
+                option.value = contact.id;
+                option.textContent = contact.name;
+                select.appendChild(option);
+
+                // Add to grid
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-2xl shadow-sm border-2 border-sky-200 flex flex-col relative group transition hover:shadow-md';
+                
+                // Sanitize phone for tel: and sms: links
+                const cleanPhone = contact.phone.replace(/[^0-9+]/g, '');
+
+                card.innerHTML = `
+                    <div class="absolute top-2 right-2 flex space-x-2 opacity-50 group-hover:opacity-100 transition">
+                        <button onclick="openContactModal(${contact.id})" class="text-sky-400 hover:text-sky-600 bg-sky-50 p-2 rounded-full w-10 h-10 flex items-center justify-center transition"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteContact(${contact.id})" class="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded-full w-10 h-10 flex items-center justify-center transition"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="flex items-center space-x-4 mb-5 mt-2">
+                        <img src="${contact.avatar}" class="w-16 h-16 rounded-full border-2 border-sky-300 shadow-sm">
+                        <div>
+                            <h4 class="text-2xl font-bold text-gray-800 leading-tight">${contact.name}</h4>
+                            <p class="text-lg text-gray-500 font-mono mt-1">${contact.phone}</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-4 justify-center mt-auto">
+                        <a href="tel:${cleanPhone}" class="bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center hover:bg-green-600 transition shadow-md btn-large" title="Call">
+                            <i class="fas fa-phone-alt text-2xl"></i>
+                        </a>
+                        <a href="sms:${cleanPhone}" class="bg-blue-500 text-white w-14 h-14 rounded-full flex items-center justify-center hover:bg-blue-600 transition shadow-md btn-large" title="Message">
+                            <i class="fas fa-comment-dots text-2xl"></i>
+                        </a>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openContactModal(id = null) {
+            const modal = document.getElementById('contact-modal');
+            const title = document.getElementById('modal-title');
+            const idInput = document.getElementById('contact-id');
+            const nameInput = document.getElementById('contact-name');
+            const phoneInput = document.getElementById('contact-phone');
+
+            if (id) {
+                const contact = contacts.find(c => c.id === id);
+                title.textContent = 'Edit Contact';
+                idInput.value = contact.id;
+                nameInput.value = contact.name;
+                phoneInput.value = contact.phone;
+            } else {
+                title.textContent = 'Add Contact';
+                idInput.value = '';
+                nameInput.value = '';
+                phoneInput.value = '';
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeContactModal() {
+            document.getElementById('contact-modal').classList.add('hidden');
+        }
+
+        function saveContact() {
+            const id = document.getElementById('contact-id').value;
+            const name = document.getElementById('contact-name').value.trim();
+            const phone = document.getElementById('contact-phone').value.trim();
+
+            if (!name || !phone) {
+                alert('Please enter both name and phone number.');
+                return;
+            }
+
+            if (id) {
+                const contact = contacts.find(c => c.id === parseInt(id));
+                contact.name = name;
+                contact.phone = phone;
+            } else {
+                contacts.push({
+                    id: Date.now(),
+                    name: name,
+                    phone: phone,
+                    // Random avatar for new contacts
+                    avatar: \`https://i.pravatar.cc/150?img=\${Math.floor(Math.random() * 70)}\`
+                });
+            }
+
+            closeContactModal();
+            renderContacts();
+        }
+
+        function deleteContact(id) {
+            if (confirm('Are you sure you want to remove this contact?')) {
+                contacts = contacts.filter(c => c.id !== id);
+                renderContacts();
+            }
+        }
+
+        function sendMessage() {
+            const text = document.getElementById('msg-text').value.trim();
+            if (!text) return;
+            
+            const btn = document.getElementById('send-msg-btn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-check mr-2"></i>Message Sent!';
+            btn.classList.replace('bg-emerald-500', 'bg-green-500');
+            btn.classList.replace('hover:bg-emerald-600', 'hover:bg-green-600');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.replace('bg-green-500', 'bg-emerald-500');
+                btn.classList.replace('hover:bg-green-600', 'hover:bg-emerald-600');
+                document.getElementById('msg-text').value = '';
+            }, 2500);
+        }
+
         function selectMood(element) {
             document.querySelectorAll('.mood-icon').forEach(el => {
                 el.style.opacity = '0.5';
@@ -275,7 +414,6 @@
             }, 2000);
         }
 
-        // Logic for family sending a simulated reminder
         function addReminder() {
             const input = document.getElementById('new-reminder-input');
             const text = input.value.trim();
@@ -290,17 +428,15 @@
                     </div>
                     <i class="fas fa-bell text-4xl text-green-300"></i>
                 `;
-                list.prepend(newReminder); // Add to top of the list
+                list.prepend(newReminder);
                 input.value = '';
                 
-                // Remove pulse animation after a couple seconds
                 setTimeout(() => {
                     newReminder.classList.remove('animate-pulse');
                 }, 2000);
             }
         }
 
-        // Logic to upload a new image to the gallery
         function addImage(event) {
             const file = event.target.files[0];
             if (file) {
@@ -313,7 +449,7 @@
                         <img src="${e.target.result}" class="w-full h-52 object-cover rounded-xl mb-3 shadow-sm" alt="New Upload">
                         <p class="text-lg font-bold text-gray-800 text-center">Shared with family ❤️</p>
                     `;
-                    gallery.prepend(newCard); // Add to the beginning of the gallery
+                    gallery.prepend(newCard);
                     
                     setTimeout(() => {
                         newCard.classList.remove('animate-pulse');
@@ -322,6 +458,11 @@
                 reader.readAsDataURL(file);
             }
         }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderContacts();
+        });
     </script>
 </body>
 </html>

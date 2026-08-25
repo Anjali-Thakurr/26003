@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Day - Diary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Pacifico&family=Indie+Flower&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --page-bg: #fdfbf7;
+            --line-color: #e0d8c8;
+        }
+
+        body {
+            background-color: #f0e6d2;
+            font-family: 'Georgia', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden; /* Prevent scrolling */
+        }
+
+        /* Toolbar */
+        .toolbar {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            z-index: 50;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: max-content;
+            max-width: 95vw;
+        }
+
+        .book {
+            display: flex;
+            width: 100%;
+            max-width: 1100px;
+            height: 82vh; /* Fits within viewport */
+            background: var(--page-bg);
+            border-radius: 10px;
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.4),
+                inset 0 0 50px rgba(0,0,0,0.1);
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .book::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%);
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .page {
+            flex: 1;
+            padding: 30px 40px 60px 40px;
+            position: relative;
+            overflow: hidden; /* No scrolling in pages */
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+        }
+
+        .page-left {
+            border-right: 1px solid var(--line-color);
+        }
+
+        .page-right {
+            border-left: 1px solid var(--line-color);
+        }
+
+        .ruled-bg {
+            background-image: linear-gradient(var(--line-color) 1px, transparent 1px);
+            background-size: 100% 2em;
+            line-height: 2em;
+        }
+
+        #journal-editor {
+            width: 100%;
+            flex-grow: 1;
+            outline: none;
+            font-size: 1.2rem;
+            color: #2c3e50;
+            z-index: 5;
+            position: relative;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: hidden;
+        }
+        
+        #journal-editor[data-empty="true"]::before {
+            content: attr(data-placeholder);
+            color: #999;
+            pointer-events: none;
+            display: block;
+        }
+
+        /* Grammar Highlights */
+        .grammar-highlight {
+            border-bottom: 2px wavy #ef4444;
+            background-color: rgba(239, 68, 68, 0.1);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .grammar-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            border-radius: 6px;
+            z-index: 100;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
+            font-family: sans-serif;
+            font-size: 12px;
+            color: #374151;
+        }
+
+        .grammar-highlight:hover .grammar-tooltip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fix-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Pagination */
+        .pagination-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 40px;
+            right: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Canvas */
+        #doodle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+            z-index: 20;
+        }
+        .drawing-mode #doodle-canvas {
+            pointer-events: auto;
+            cursor: crosshair;
+        }
+
+        .entry-card {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 20px;
+            border-radius: 8px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .entry-image {
+            max-height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-top: 10px;
+            border: 3px solid #fff;
+            box-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+            transform: rotate(-2deg);
+        }
+
+        .activity-tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.7);
+            color: #5d4037;
+            border: 1px solid #e0d8c8;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toolbar -->
+    <div class="toolbar text-sm text-gray-700 font-sans">
+        <a href="index.html" class="font-bold text-teal-700 mr-2 hover:text-teal-900"><i class="fas fa-home"></i> Home</a>
+        
+        <!-- Font Selection -->
+        <div class="flex items-center gap-1 border-l pl-3 ml-1">
+            <i class="fas fa-font text-gray-400"></i>
+            <select id="font-select" class="border rounded px-2 py-1 outline-none bg-gray-50">
+                <option value="'Georgia', serif">Classic Georgia</option>
+                <option value="'Caveat', cursive">Trendy Caveat</option>
+                <option value="'Dancing Script', cursive">Dancing Script</option>
+                <option value="'Pacifico', cursive">Pacifico</option>
+                <option value="'Indie Flower', cursive">Indie Flower</option>
+            </select>
+        </div>
+
+        <!-- Color Selection -->
+        <div class="flex items-center gap-1 border-l pl-3 ml-1">
+            <i class="fas fa-palette text-gray-400"></i>
+            <input type="color" id="page-color" value="#fdfbf7" title="Book Color" class="w-6 h-6 rounded cursor-pointer border-0 p-0">
+        </div>
+
+        <!-- AI Text Correct -->
+        <div class="border-l pl-3 ml-1">
+            <button id="ai-correct-btn" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded shadow-sm transition">
+                <i class="fas fa-wand-magic-sparkles"></i> AI Text Review
+            </button>
+        </div>
+
+        <!-- Doodles -->
+        <div class="flex items-center gap-2 border-l pl-3 ml-1">
+            <span class="text-gray-400"><i class="fas fa-paint-brush"></i> Doodles:</span>
+            <button id="draw-mode-btn" class="hover:bg-gray-200 px-2 py-1 rounded" title="Toggle Draw Mode"><i class="fas fa-pen"></i></button>
+            <button id="ai-doodle-btn" class="hover:bg-gray-200 px-2 py-1 rounded" title="AI Auto Doodle"><i class="fas fa-robot"></i></button>
+            <button id="undo-btn" class="hover:bg-gray-200 px-2 py-1 rounded" title="Undo"><i class="fas fa-undo"></i></button>
+            <button id="redo-btn" class="hover:bg-gray-200 px-2 py-1 rounded" title="Redo"><i class="fas fa-redo"></i></button>
+            <button id="clear-doodle-btn" class="hover:bg-red-100 px-2 py-1 rounded text-red-500" title="Clear Canvas"><i class="fas fa-trash"></i></button>
+        </div>
+    </div>
+
+    <div class="book" id="book">
+        
+        <!-- Left Page: Past Entries -->
+        <div class="page page-left" id="left-page">
+            <h2 class="text-3xl text-[#5d4037] mb-4 text-center" style="font-family: 'Brush Script MT', cursive;">My Memories</h2>
+            
+            <div id="entry-display" class="flex-grow flex flex-col items-center justify-center overflow-hidden">
+                <!-- Single entry rendered here -->
+                <div id="empty-state" class="text-center text-gray-400 italic font-sans">
+                    No memories yet. Start journaling!
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-controls font-sans">
+                <button id="prev-entry" class="text-gray-500 hover:text-black hidden transition bg-white/50 px-2 rounded shadow-sm"><i class="fas fa-chevron-left"></i> Prev</button>
+                <span id="page-indicator" class="text-gray-400 text-sm mx-auto"></span>
+                <button id="next-entry" class="text-gray-500 hover:text-black hidden transition bg-white/50 px-2 rounded shadow-sm">Next <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Right Page: New Entry -->
+        <div class="page page-right ruled-bg relative" id="right-page">
+            <!-- Canvas Overlay for Doodles -->
+            <canvas id="doodle-canvas"></canvas>
+            
+            <h2 class="text-3xl text-[#5d4037] mb-2 text-center" style="font-family: 'Brush Script MT', cursive;" id="current-date"></h2>
+            
+            <form id="journal-form" class="h-full flex flex-col relative z-10 pointer-events-none">
+                <!-- Form elements have pointer-events-auto so they can be clicked even if canvas is above, unless in draw mode -->
+                <div id="journal-editor" class="journal-input ruled-bg pointer-events-auto" contenteditable="true" data-placeholder="Dear Diary..." data-empty="true"></div>
+                
+                <div class="mt-2 bg-white/90 p-3 rounded-xl border border-[#d4c8b0] shadow-sm pointer-events-auto">
+                    <div class="mb-2">
+                        <label class="text-xs text-gray-600 block mb-1 font-sans font-semibold">Activities:</label>
+                        <div class="flex flex-wrap gap-1" id="activity-options">
+                            <label class="cursor-pointer">
+                                <input type="checkbox" value="Reading" class="hidden peer">
+                                <span class="px-2 py-1 bg-gray-100 peer-checked:bg-blue-100 peer-checked:text-blue-700 border rounded-full text-xs font-sans">Reading</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="checkbox" value="Exercise" class="hidden peer">
+                                <span class="px-2 py-1 bg-gray-100 peer-checked:bg-green-100 peer-checked:text-green-700 border rounded-full text-xs font-sans">Exercise</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="checkbox" value="Family" class="hidden peer">
+                                <span class="px-2 py-1 bg-gray-100 peer-checked:bg-purple-100 peer-checked:text-purple-700 border rounded-full text-xs font-sans">Family</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="checkbox" value="Games" class="hidden peer">
+                                <span class="px-2 py-1 bg-gray-100 peer-checked:bg-orange-100 peer-checked:text-orange-700 border rounded-full text-xs font-sans">Games</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between mt-2">
+                        <div class="flex-1 flex items-center">
+                            <label for="image-upload" class="cursor-pointer inline-flex items-center gap-1 text-xs text-[#5d4037] hover:bg-gray-50 font-sans font-semibold bg-white px-2 py-1 border border-[#d4c8b0] rounded shadow-sm transition">
+                                <i class="fas fa-camera"></i> Photo
+                            </label>
+                            <input type="file" id="image-upload" accept="image/*" class="hidden">
+                            <img id="image-preview" class="h-8 ml-2 object-cover rounded hidden border">
+                        </div>
+                        <button type="submit" class="bg-[#5d4037] text-white px-4 py-1 text-sm rounded shadow hover:bg-[#4e342e] font-sans font-semibold transition">
+                            Save Page
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Basic Setup & State ---
+        const dateDisplay = document.getElementById('current-date');
+        const now = new Date();
+        dateDisplay.innerText = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        const book = document.getElementById('book');
+        const journalEditor = document.getElementById('journal-editor');
+        
+        // Editor Placeholder Logic
+        journalEditor.addEventListener('input', function() {
+            if(this.textContent.trim() === '') {
+                this.setAttribute('data-empty', 'true');
+            } else {
+                this.setAttribute('data-empty', 'false');
+            }
+        });
+
+        // --- 2. Customization (Font & Color) ---
+        const fontSelect = document.getElementById('font-select');
+        fontSelect.addEventListener('change', (e) => {
+            document.body.style.fontFamily = e.target.value;
+        });
+
+        const colorPicker = document.getElementById('page-color');
+        colorPicker.addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--page-bg', e.target.value);
+        });
+
+        // --- 3. AI Text Correction Mock ---
+        const aiCorrectBtn = document.getElementById('ai-correct-btn');
+        const commonMistakes = {
+            'teh': 'the',
+            'alot': 'a lot',
+            'recieve': 'receive',
+            'awsome': 'awesome',
+            'i': 'I',
+            'im': "I'm",
+            'cant': "can't"
+        };
+
+        aiCorrectBtn.addEventListener('click', () => {
+            let html = journalEditor.innerHTML;
+            let count = 0;
+            
+            // Basic regex to find isolated words matching our mistake dictionary
+            Object.keys(commonMistakes).forEach(wrong => {
+                const regex = new RegExp(`\\b${wrong}\\b`, 'gi');
+                html = html.replace(regex, (match) => {
+                    count++;
+                    return `<span class="grammar-highlight" id="mistake-${count}">${match}
+                        <span class="grammar-tooltip font-sans" contenteditable="false">
+                            Change to: <b>${commonMistakes[wrong]}</b> 
+                            <button class="fix-btn ml-2" onclick="applyFix('mistake-${count}', '${commonMistakes[wrong]}')">Fix</button>
+                        </span>
+                    </span>`;
+                });
+            });
+            
+            if(count > 0) {
+                journalEditor.innerHTML = html;
+            } else {
+                alert("AI: Your text looks great! No obvious mistakes found.");
+            }
+        });
+
+        // Global function for the fix button
+        window.applyFix = function(id, correction) {
+            const span = document.getElementById(id);
+            if(span) {
+                span.outerHTML = correction; // Replace the whole span with the corrected text
+            }
+        };
+
+        // --- 4. Pagination & Entries (Left Page) ---
+        const entryDisplay = document.getElementById('entry-display');
+        const prevEntryBtn = document.getElementById('prev-entry');
+        const nextEntryBtn = document.getElementById('next-entry');
+        const pageIndicator = document.getElementById('page-indicator');
+        
+        let entries = JSON.parse(localStorage.getItem('diaryEntries')) || [];
+        let currentPageIndex = 0; // 0 is newest
+
+        function renderEntries() {
+            entries.sort((a, b) => b.timestamp - a.timestamp); // Newest first
+
+            if (entries.length === 0) {
+                entryDisplay.innerHTML = `<div id="empty-state" class="text-center text-gray-400 italic font-sans">No memories yet. Start journaling!</div>`;
+                prevEntryBtn.classList.add('hidden');
+                nextEntryBtn.classList.add('hidden');
+                pageIndicator.innerText = '';
+                return;
+            }
+
+            // Display current entry
+            const entry = entries[currentPageIndex];
+            const dateStr = new Date(entry.timestamp).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            
+            let tagsHtml = '';
+            if (entry.activities && entry.activities.length > 0) {
+                tagsHtml = '<div class="mt-4 border-t border-[#e0d8c8] pt-2">';
+                entry.activities.forEach(act => {
+                    tagsHtml += `<span class="activity-tag">${act}</span>`;
+                });
+                tagsHtml += '</div>';
+            }
+
+            let imgHtml = '';
+            if (entry.image) {
+                imgHtml = `<img src="${entry.image}" class="entry-image mx-auto" alt="Memory photo">`;
+            }
+
+            entryDisplay.innerHTML = `
+                <div class="entry-card w-full">
+                    <div class="text-sm text-gray-500 mb-2 border-b border-[#e0d8c8] pb-1">${dateStr}</div>
+                    <div class="entry-text text-gray-800 text-lg flex-grow overflow-hidden" style="white-space: pre-wrap;">${entry.text}</div>
+                    ${imgHtml}
+                    ${tagsHtml}
+                </div>
+            `;
+
+            // Update controls
+            pageIndicator.innerText = `Page ${currentPageIndex + 1} of ${entries.length}`;
+            
+            if (currentPageIndex > 0) prevEntryBtn.classList.remove('hidden');
+            else prevEntryBtn.classList.add('hidden');
+
+            if (currentPageIndex < entries.length - 1) nextEntryBtn.classList.remove('hidden');
+            else nextEntryBtn.classList.add('hidden');
+        }
+
+        prevEntryBtn.addEventListener('click', () => {
+            if (currentPageIndex > 0) {
+                currentPageIndex--;
+                renderEntries();
+            }
+        });
+
+        nextEntryBtn.addEventListener('click', () => {
+            if (currentPageIndex < entries.length - 1) {
+                currentPageIndex++;
+                renderEntries();
+            }
+        });
+
+        renderEntries();
+
+        // --- 5. Save Entry ---
+        const imageUpload = document.getElementById('image-upload');
+        const imagePreview = document.getElementById('image-preview');
+        let currentImageBase64 = null;
+
+        imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    currentImageBase64 = event.target.result;
+                    imagePreview.src = currentImageBase64;
+                    imagePreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        const form = document.getElementById('journal-form');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Clean up text (remove grammar spans if any)
+            let rawHtml = journalEditor.innerHTML;
+            // A simple way to extract text without the tooltips:
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = rawHtml;
+            // Remove tooltips before extracting text
+            tempDiv.querySelectorAll('.grammar-tooltip').forEach(el => el.remove());
+            const cleanText = tempDiv.innerText || tempDiv.textContent;
+
+            if(!cleanText.trim() && !currentImageBase64 && !drawnPaths.length) return;
+
+            const activityCheckboxes = document.querySelectorAll('#activity-options input[type="checkbox"]:checked');
+            const activities = Array.from(activityCheckboxes).map(cb => cb.value);
+            
+            // Save canvas data if drawn
+            let doodleData = null;
+            if(drawnPaths.length > 0) {
+                doodleData = canvas.toDataURL();
+            }
+
+            const newEntry = {
+                id: Date.now(),
+                timestamp: Date.now(),
+                text: cleanText,
+                activities: activities,
+                image: currentImageBase64,
+                doodle: doodleData
+            };
+            
+            entries.push(newEntry);
+            localStorage.setItem('diaryEntries', JSON.stringify(entries));
+            
+            // Reset
+            journalEditor.innerHTML = '';
+            journalEditor.setAttribute('data-empty', 'true');
+            currentImageBase64 = null;
+            imagePreview.src = '';
+            imagePreview.classList.add('hidden');
+            activityCheckboxes.forEach(cb => cb.checked = false);
+            clearCanvas();
+            
+            currentPageIndex = 0; // Go to newest
+            renderEntries();
+        });
+
+
+        // --- 6. Doodle Canvas & AI Doodles ---
+        const canvas = document.getElementById('doodle-canvas');
+        const ctx = canvas.getContext('2d');
+        const rightPage = document.getElementById('right-page');
+        
+        let isDrawing = false;
+        let isDrawMode = false;
+        
+        // Undo/Redo State
+        let drawnPaths = []; // Store history of canvas states as images
+        let redoStack = [];
+
+        function resizeCanvas() {
+            canvas.width = rightPage.clientWidth;
+            canvas.height = rightPage.clientHeight;
+            restoreCanvasState();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        // Initial size
+        setTimeout(resizeCanvas, 100); 
+
+        // Toggle Draw Mode
+        const drawModeBtn = document.getElementById('draw-mode-btn');
+        drawModeBtn.addEventListener('click', () => {
+            isDrawMode = !isDrawMode;
+            if(isDrawMode) {
+                rightPage.classList.add('drawing-mode');
+                drawModeBtn.classList.add('bg-blue-200');
+            } else {
+                rightPage.classList.remove('drawing-mode');
+                drawModeBtn.classList.remove('bg-blue-200');
+            }
+        });
+
+        // Drawing events
+        function getMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: evt.clientX - rect.left,
+                y: evt.clientY - rect.top
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if(!isDrawMode) return;
+            isDrawing = true;
+            const pos = getMousePos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#374151'; // Dark gray ink
+            
+            // Clear redo stack on new action
+            redoStack = [];
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if(!isDrawing || !isDrawMode) return;
+            const pos = getMousePos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if(!isDrawing) return;
+            isDrawing = false;
+            saveCanvasState();
+        });
+        canvas.addEventListener('mouseout', () => {
+            if(isDrawing) {
+                isDrawing = false;
+                saveCanvasState();
+            }
+        });
+
+        // State Management
+        function saveCanvasState() {
+            drawnPaths.push(canvas.toDataURL());
+        }
+
+        function restoreCanvasState() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if(drawnPaths.length > 0) {
+                const img = new Image();
+                img.src = drawnPaths[drawnPaths.length - 1];
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0);
+                }
+            }
+        }
+
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            if(drawnPaths.length > 0) {
+                redoStack.push(drawnPaths.pop()); // Move to redo stack
+                restoreCanvasState();
+            }
+        });
+
+        document.getElementById('redo-btn').addEventListener('click', () => {
+            if(redoStack.length > 0) {
+                drawnPaths.push(redoStack.pop());
+                restoreCanvasState();
+            }
+        });
+
+        function clearCanvas() {
+            if(drawnPaths.length > 0) redoStack.push(drawnPaths[drawnPaths.length - 1]);
+            drawnPaths.push("empty"); // Marker for clear
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            saveCanvasState();
+        }
+
+        document.getElementById('clear-doodle-btn').addEventListener('click', clearCanvas);
+
+        // AI Doodle Simulation
+        const aiDoodles = ['🌸', '✨', '☀️', '☕', '🎨', '💖', '🌱'];
+        document.getElementById('ai-doodle-btn').addEventListener('click', () => {
+            const randomDoodle = aiDoodles[Math.floor(Math.random() * aiDoodles.length)];
+            // Draw random text on canvas
+            const x = Math.random() * (canvas.width - 50) + 20;
+            const y = Math.random() * (canvas.height - 150) + 50;
+            
+            ctx.font = '30px Arial';
+            ctx.fillText(randomDoodle, x, y);
+            saveCanvasState();
+        });
+
+    </script>
+</body>
+</html>
