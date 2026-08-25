@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reminders - MDoNER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fdfbf7;
+            color: #1a202c;
+        }
+        .haptic:active {
+            transform: scale(0.95);
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .visual-cue {
+            animation: float 3s ease-in-out infinite;
+        }
+        .task-card {
+            transition: all 0.4s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation -->
+    <header class="bg-rose-700 text-white p-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <a href="index.html" class="hover:text-rose-200 transition">
+                    <i class="fas fa-arrow-left text-4xl"></i>
+                </a>
+                <h1 class="text-3xl font-bold">My Reminders</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <select id="voice-language" class="bg-rose-600 text-white text-lg p-2 rounded border border-rose-500 focus:outline-none">
+                    <option value="en">English Voice</option>
+                    <option value="as">Assamese Voice</option>
+                    <option value="mni">Manipuri Voice</option>
+                    <option value="kha">Khasi Voice</option>
+                    <option value="hi">Hindi Voice</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow w-full max-w-4xl mx-auto p-4 flex flex-col space-y-8 mt-4">
+        
+        <!-- Daily Progress -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border-2 border-green-200 flex flex-col md:flex-row justify-between items-center">
+            <div class="w-full md:w-2/3">
+                <h2 class="text-2xl font-bold text-green-800 mb-2"><i class="fas fa-chart-line"></i> Daily Progress</h2>
+                <p class="text-lg text-gray-600 mb-3" id="completion-rate">0% of tasks completed today. Let's get started!</p>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="bg-green-500 h-4 rounded-full transition-all duration-500" id="progress-bar-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="mt-4 md:mt-0 bg-green-100 text-green-800 font-bold px-6 py-3 rounded-full text-xl border-2 border-green-300">
+                Connected to Family
+            </div>
+        </div>
+
+        <!-- Today's Tasks Section -->
+        <div>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-gray-800">Today's Tasks</h2>
+                <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-md text-lg haptic transition">
+                    <i class="fas fa-plus mr-2"></i> Add Reminder
+                </button>
+            </div>
+            
+            <div id="active-tasks" class="space-y-6">
+                <!-- Active tasks injected here -->
+                <div id="empty-state" class="text-center py-10 hidden">
+                    <i class="fas fa-clipboard-check text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-2xl text-gray-500">No pending tasks for today. Great job!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Tasks Section -->
+        <div class="pt-4">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Completed</h2>
+            <div id="completed-tasks" class="space-y-4 opacity-75">
+                <!-- Completed tasks injected here -->
+                <div id="empty-done-state" class="text-center py-4 text-gray-400 italic">
+                    No tasks completed yet today.
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Motivational Toast -->
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-yellow-900 text-2xl font-bold py-4 px-8 rounded-full shadow-2xl transition-opacity duration-500 opacity-0 pointer-events-none z-50 flex items-center">
+        <i class="fas fa-star text-3xl mr-3"></i> <span id="toast-msg">Great job!</span>
+    </div>
+
+    <!-- Add Reminder Modal -->
+    <div id="add-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl m-4 overflow-y-auto max-h-[90vh]">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">New Reminder</h2>
+            <form id="reminder-form" onsubmit="addReminder(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Task Name</label>
+                    <input type="text" id="task-name" required class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-indigo-500 focus:outline-none text-xl" placeholder="e.g. Drink Water">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Date</label>
+                    <input type="date" id="task-date" required class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-indigo-500 focus:outline-none text-xl">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Time</label>
+                    <input type="time" id="task-time" required class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-indigo-500 focus:outline-none text-xl">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Repeat</label>
+                    <select id="task-repeat" class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-indigo-500 focus:outline-none text-xl">
+                        <option value="None">None</option>
+                        <option value="Daily">Daily</option>
+                        <option value="Weekly">Weekly</option>
+                        <option value="Monthly">Monthly</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl text-lg">Cancel</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl text-lg">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Set today's date as default in modal
+        document.getElementById('task-date').valueAsDate = new Date();
+
+        function getIconForTask(name) {
+            const n = name.toLowerCase();
+            if (n.includes('water') || n.includes('drink')) return { icon: 'fa-glass-water', color: 'blue' };
+            if (n.includes('pill') || n.includes('medicine') || n.includes('med')) return { icon: 'fa-pills', color: 'rose' };
+            if (n.includes('walk') || n.includes('exercise') || n.includes('yoga')) return { icon: 'fa-walking', color: 'orange' };
+            if (n.includes('doctor') || n.includes('appointment') || n.includes('clinic')) return { icon: 'fa-user-md', color: 'teal' };
+            if (n.includes('sleep') || n.includes('bed') || n.includes('night')) return { icon: 'fa-bed', color: 'indigo' };
+            if (n.includes('eat') || n.includes('food') || n.includes('breakfast') || n.includes('lunch') || n.includes('dinner')) return { icon: 'fa-utensils', color: 'yellow' };
+            if (n.includes('call') || n.includes('phone') || n.includes('family')) return { icon: 'fa-phone', color: 'purple' };
+            if (n.includes('game') || n.includes('play')) return { icon: 'fa-gamepad', color: 'purple' };
+            if (n.includes('read') || n.includes('book')) return { icon: 'fa-book-open', color: 'emerald' };
+            return { icon: 'fa-bell', color: 'gray' };
+        }
+
+        function initApp() {
+            const today = new Date().toDateString();
+            const lastDate = localStorage.getItem('lastDate');
+            
+            let tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
+
+            if (lastDate !== today) {
+                // New day logic: reset 'completed' for recurring tasks, clear one-off past tasks
+                const todayFormatted = new Date().toISOString().split('T')[0];
+                tasks = tasks.filter(t => {
+                    // keep if it's daily, weekly, monthly OR if the date is >= today
+                    return t.repeat !== 'None' || t.date >= todayFormatted;
+                });
+                
+                // Uncheck completed for recurring tasks
+                tasks.forEach(t => {
+                    if (t.repeat !== 'None') {
+                        t.completed = false;
+                    }
+                });
+
+                localStorage.setItem('lastDate', today);
+                localStorage.setItem('userTasks', JSON.stringify(tasks));
+            }
+
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
+            const activeContainer = document.getElementById('active-tasks');
+            const doneContainer = document.getElementById('completed-tasks');
+            const emptyState = document.getElementById('empty-state');
+            const emptyDoneState = document.getElementById('empty-done-state');
+
+            // Clear containers (except empty states)
+            activeContainer.innerHTML = '';
+            doneContainer.innerHTML = '';
+
+            let activeCount = 0;
+            let doneCount = 0;
+
+            const todayFormatted = new Date().toISOString().split('T')[0];
+
+            tasks.forEach(task => {
+                // Determine if task should show today
+                // Simple logic: show if date is today, or if it's Daily. (Omit complex Weekly/Monthly logic for now)
+                if (task.date === todayFormatted || task.repeat === 'Daily') {
+                    if (task.completed) {
+                        doneContainer.appendChild(createCompletedCard(task));
+                        doneCount++;
+                    } else {
+                        activeContainer.appendChild(createActiveCard(task));
+                        activeCount++;
+                    }
+                }
+            });
+
+            // Handle empty states
+            if (activeCount === 0) {
+                activeContainer.appendChild(emptyState);
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            if (doneCount === 0) {
+                doneContainer.appendChild(emptyDoneState);
+                emptyDoneState.classList.remove('hidden');
+            } else {
+                emptyDoneState.classList.add('hidden');
+            }
+
+            updateProgress(doneCount, activeCount + doneCount);
+        }
+
+        function createActiveCard(task) {
+            const div = document.createElement('div');
+            div.className = `task-card bg-${task.color}-50 border-4 border-${task.color}-300 rounded-3xl p-6 shadow-lg flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6 relative`;
+            div.id = `task-${task.id}`;
+            
+            const repeatBadge = task.repeat !== 'None' ? `<span class="bg-${task.color}-200 text-${task.color}-800 text-sm px-3 py-1 rounded-full ml-2 font-bold">${task.repeat}</span>` : '';
+
+            div.innerHTML = `
+                <div class="bg-${task.color}-500 text-white p-6 rounded-full visual-cue flex-shrink-0">
+                    <i class="fas ${task.icon} text-5xl"></i>
+                </div>
+                <div class="flex-grow text-center md:text-left w-full">
+                    <h3 class="text-3xl font-bold text-${task.color}-900 mb-1">${task.name}</h3>
+                    <p class="text-xl text-${task.color}-800 flex items-center justify-center md:justify-start">
+                        <i class="fas fa-clock mr-2"></i> ${task.timeStr} ${repeatBadge}
+                    </p>
+                </div>
+                <div class="flex flex-col space-y-3 w-full md:w-auto flex-shrink-0">
+                    <button class="haptic bg-green-500 hover:bg-green-600 text-white font-bold text-2xl py-3 px-8 rounded-2xl shadow flex items-center justify-center transition" onclick="completeTask('${task.id}')">
+                        <i class="fas fa-check-circle mr-2"></i> Done
+                    </button>
+                    <button class="haptic bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold text-xl py-2 px-8 rounded-2xl shadow flex items-center justify-center transition">
+                        <i class="fas fa-stopwatch mr-2"></i> Later
+                    </button>
+                </div>
+            `;
+            return div;
+        }
+
+        function createCompletedCard(task) {
+            const div = document.createElement('div');
+            div.className = `task-card bg-gray-100 border-2 border-gray-300 rounded-2xl p-4 flex items-center space-x-4`;
+            div.innerHTML = `
+                <div class="bg-gray-400 text-white p-3 rounded-full flex-shrink-0">
+                    <i class="fas ${task.icon} text-3xl"></i>
+                </div>
+                <div class="flex-grow">
+                    <h4 class="text-2xl font-bold text-gray-600 line-through">${task.name}</h4>
+                    <p class="text-lg text-gray-500">${task.timeStr}</p>
+                </div>
+                <div class="text-green-600 font-bold text-xl flex items-center pr-4">
+                    <i class="fas fa-check-double mr-2"></i> Done
+                </div>
+            `;
+            return div;
+        }
+
+        function updateProgress(completed, total) {
+            let percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+            const rateText = document.getElementById('completion-rate');
+            
+            if (total === 0) {
+                rateText.innerText = "No tasks assigned for today.";
+            } else if (percent === 100) {
+                rateText.innerText = "100% completed! Amazing job today! 🎉";
+            } else {
+                rateText.innerText = `${percent}% of tasks completed today. Keep it up!`;
+            }
+            
+            document.getElementById('progress-bar-fill').style.width = `${percent}%`;
+        }
+
+        function completeTask(taskId) {
+            if (navigator.vibrate) navigator.vibrate(50);
+            playTone();
+
+            // Show motivation
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 3000);
+
+            // Update data
+            let tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
+            const taskIndex = tasks.findIndex(t => t.id === taskId);
+            if (taskIndex > -1) {
+                tasks[taskIndex].completed = true;
+                localStorage.setItem('userTasks', JSON.stringify(tasks));
+                
+                // Visually animate out, then re-render
+                const card = document.getElementById(`task-${taskId}`);
+                card.style.transform = 'scale(0.95)';
+                card.style.opacity = '0';
+                
+                setTimeout(() => {
+                    renderTasks();
+                }, 300);
+            }
+        }
+
+        function playTone() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.5);
+            } catch (e) { console.error("Audio API not supported"); }
+        }
+
+        function openModal() {
+            document.getElementById('add-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('add-modal').classList.add('hidden');
+            document.getElementById('reminder-form').reset();
+            document.getElementById('task-date').valueAsDate = new Date();
+        }
+
+        function addReminder(event) {
+            event.preventDefault();
+            const name = document.getElementById('task-name').value;
+            const date = document.getElementById('task-date').value;
+            let time = document.getElementById('task-time').value;
+            const repeat = document.getElementById('task-repeat').value;
+
+            // Format Time
+            let [hours, minutes] = time.split(':');
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; 
+            const timeStr = `${hours}:${minutes} ${ampm}`;
+
+            // AI-like Icon selection
+            const theme = getIconForTask(name);
+
+            const task = {
+                id: Date.now().toString(),
+                name,
+                date,
+                timeStr,
+                time,
+                repeat,
+                icon: theme.icon,
+                color: theme.color,
+                completed: false
+            };
+            
+            let tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
+            tasks.push(task);
+            localStorage.setItem('userTasks', JSON.stringify(tasks));
+            
+            closeModal();
+            renderTasks();
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
