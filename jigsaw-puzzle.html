@@ -342,6 +342,7 @@
 
   <!-- Play area -->
   <div id="play-area" class="relative flex-grow overflow-hidden">
+    <div id="target-box" style="display:none; position:absolute; border:3px dashed rgba(13,148,136,.4); border-radius:12px; pointer-events:none; z-index:1;"></div>
     <canvas id="ghost-canvas"></canvas>
     <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none" style="z-index:8999; display:none;"></canvas>
     <div id="progress-bar-wrap">
@@ -631,6 +632,13 @@ function buildPuzzle() {
   const gridOriginX = (areaW - cols * dpw) / 2;
   const gridOriginY = (areaH - rows * dph) / 2;
 
+  const targetBox = document.getElementById('target-box');
+  targetBox.style.display = 'block';
+  targetBox.style.left = gridOriginX + 'px';
+  targetBox.style.top = gridOriginY + 'px';
+  targetBox.style.width = (cols * dpw) + 'px';
+  targetBox.style.height = (rows * dph) + 'px';
+
   for (let i = 0; i < totalPieces; i++) {
     const r = Math.floor(i / cols), c = i % cols;
     const tabs = tabDefs[i];
@@ -694,6 +702,8 @@ function setPos(p) {
 function clearPieces() {
   pieces.forEach(p => p.wrap.remove());
   pieces = []; zCounter = 10;
+  const targetBox = document.getElementById('target-box');
+  if (targetBox) targetBox.style.display = 'none';
   if (peekActive) {
     peekActive = false;
     ghostCanvas.classList.remove('visible');
