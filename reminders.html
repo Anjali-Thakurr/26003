@@ -140,8 +140,32 @@
             <h2 class="text-3xl font-bold text-gray-800 mb-6">New Reminder</h2>
             <form id="reminder-form" onsubmit="addReminder(event)">
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-lg font-bold mb-2">Task Name</label>
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Event Name</label>
                     <input type="text" id="task-name" required class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-indigo-500 focus:outline-none text-xl" placeholder="e.g. Drink Water">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Description (Optional)</label>
+                    <textarea id="task-desc" class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-indigo-500 focus:outline-none text-xl" rows="2" placeholder="e.g. Remember to take with food"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Sticker / Emoji</label>
+                    <select id="task-emoji" class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-indigo-500 focus:outline-none text-xl">
+                        <option value="auto">🤖 Auto-select based on name</option>
+                        <option value="💧">💧 Water</option>
+                        <option value="💊">💊 Medicine</option>
+                        <option value="🚶">🚶 Walking</option>
+                        <option value="👨‍⚕️">👨‍⚕️ Doctor</option>
+                        <option value="🛌">🛌 Sleep</option>
+                        <option value="🍽️">🍽️ Food</option>
+                        <option value="📱">📱 Call</option>
+                        <option value="🧩">🧩 Game</option>
+                        <option value="📖">📖 Reading</option>
+                        <option value="🔒">🔒 Security</option>
+                        <option value="❤️">❤️ Heart</option>
+                        <option value="⭐">⭐ Star</option>
+                        <option value="🎂">🎂 Birthday</option>
+                        <option value="🎉">🎉 Party</option>
+                    </select>
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-lg font-bold mb-2">Date</label>
@@ -158,6 +182,7 @@
                         <option value="Daily">Daily</option>
                         <option value="Weekly">Weekly</option>
                         <option value="Monthly">Monthly</option>
+                        <option value="Yearly">Yearly</option>
                     </select>
                 </div>
                 <div class="flex justify-end space-x-4">
@@ -170,7 +195,7 @@
 
     <!-- Special Day Modal -->
     <div id="special-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl m-4">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl m-4 overflow-y-auto max-h-[90vh]">
             <h2 class="text-3xl font-bold text-gray-800 mb-6" id="special-modal-title">New Special Day</h2>
             <form id="special-form" onsubmit="saveSpecialDay(event)">
                 <input type="hidden" id="special-id">
@@ -178,9 +203,38 @@
                     <label class="block text-gray-700 text-lg font-bold mb-2">Event Name</label>
                     <input type="text" id="special-name" required class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-pink-500 focus:outline-none text-xl" placeholder="e.g. Maria's Birthday">
                 </div>
-                <div class="mb-6">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Description (Optional)</label>
+                    <textarea id="special-desc" class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-pink-500 focus:outline-none text-xl" rows="2" placeholder="e.g. Buy flowers & gift card"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Sticker / Emoji</label>
+                    <select id="special-emoji" class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-pink-500 focus:outline-none text-xl">
+                        <option value="🎂">🎂 Birthday</option>
+                        <option value="🎉">🎉 Party / Celebration</option>
+                        <option value="❤️">❤️ Anniversary</option>
+                        <option value="⭐">⭐ Special Event</option>
+                        <option value="🎁">🎁 Gift</option>
+                        <option value="🎈">🎈 Balloon</option>
+                        <option value="👑">👑 Royalty / VIP</option>
+                        <option value="🌸">🌸 Flower</option>
+                        <option value="💍">💍 Wedding</option>
+                        <option value="🎓">🎓 Graduation</option>
+                    </select>
+                </div>
+                <div class="mb-4">
                     <label class="block text-gray-700 text-lg font-bold mb-2">Date</label>
                     <input type="date" id="special-date" required class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-pink-500 focus:outline-none text-xl">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Repeat</label>
+                    <select id="special-repeat" class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-pink-500 focus:outline-none text-xl">
+                        <option value="Yearly" selected>Yearly</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Weekly">Weekly</option>
+                        <option value="Daily">Daily</option>
+                        <option value="None">None</option>
+                    </select>
                 </div>
                 <div class="flex justify-end space-x-4">
                     <button type="button" onclick="closeSpecialModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl text-lg">Cancel</button>
@@ -269,7 +323,6 @@
             }
 
             if (lastDate && lastDate !== today) {
-                // Keep upcoming tasks, reset daily recurring tasks completion
                 tasks = tasks.filter(t => t.repeat !== 'None' || t.date >= todayFormatted);
                 tasks.forEach(t => {
                     if (t.repeat !== 'None') {
@@ -313,7 +366,6 @@
                 }
 
                 if (task.date === todayFormatted || task.repeat === 'Daily') {
-                    // It's a task for today (only count these for progress)
                     if (task.completed) {
                         doneContainer.appendChild(createCompletedCard(task));
                         doneCount++;
@@ -322,18 +374,15 @@
                         activeCount++;
                     }
                 } else if (task.date > todayFormatted) {
-                    // It's a task for the future (do not count for today's progress)
                     upcomingContainer.appendChild(createUpcomingCard(task));
                     upcomingCount++;
                 }
             });
 
-            // Handle empty states
             activeCount === 0 ? (activeContainer.appendChild(emptyState), emptyState.classList.remove('hidden')) : emptyState.classList.add('hidden');
             doneCount === 0 ? (doneContainer.appendChild(emptyDoneState), emptyDoneState.classList.remove('hidden')) : emptyDoneState.classList.add('hidden');
             upcomingCount === 0 ? (upcomingContainer.appendChild(emptyUpcomingState), emptyUpcomingState.classList.remove('hidden')) : emptyUpcomingState.classList.add('hidden');
 
-            // Only pass today's counts to updateProgress
             updateProgress(doneCount, activeCount + doneCount);
         }
 
@@ -351,20 +400,26 @@
             } else {
                 emptyState.classList.add('hidden');
                 days.forEach(day => {
-                    // Format date nicely (e.g. Oct 15)
                     const d = new Date(day.date);
                     const formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-                    
+                    const emoji = day.emoji ? day.emoji : '🎂';
+                    const repeatBadge = day.repeat && day.repeat !== 'None' ? `<span class="bg-pink-100 text-pink-800 text-xs px-2 py-1 rounded-full ml-2 font-bold">${day.repeat}</span>` : '';
+                    const descHtml = day.desc ? `<p class="text-md text-pink-700 mt-1">${day.desc}</p>` : '';
+
                     const div = document.createElement('div');
                     div.className = "bg-pink-50 border-2 border-pink-200 rounded-2xl p-4 flex justify-between items-center shadow-sm";
                     div.innerHTML = `
-                        <div>
-                            <h4 class="text-xl font-bold text-pink-900">${day.name}</h4>
-                            <p class="text-lg text-pink-700"><i class="fas fa-calendar-alt mr-2"></i>${formattedDate}</p>
+                        <div class="flex items-start space-x-3">
+                            <div class="text-3xl mt-1">${emoji}</div>
+                            <div>
+                                <h4 class="text-xl font-bold text-pink-900">${day.name}</h4>
+                                <p class="text-md text-pink-700 font-medium"><i class="fas fa-calendar-alt mr-1"></i>${formattedDate} ${repeatBadge}</p>
+                                ${descHtml}
+                            </div>
                         </div>
                         <div class="flex space-x-1">
-                            <button onclick="editSpecialDay('${day.id}')" class="text-gray-400 hover:text-blue-500 p-3 transition"><i class="fas fa-edit text-xl"></i></button>
-                            <button onclick="deleteSpecialDay('${day.id}')" class="text-gray-400 hover:text-red-500 p-3 transition"><i class="fas fa-trash text-xl"></i></button>
+                            <button onclick="editSpecialDay('${day.id}')" class="text-gray-400 hover:text-blue-500 p-2 transition"><i class="fas fa-edit text-xl"></i></button>
+                            <button onclick="deleteSpecialDay('${day.id}')" class="text-gray-400 hover:text-red-500 p-2 transition"><i class="fas fa-trash text-xl"></i></button>
                         </div>
                     `;
                     container.appendChild(div);
@@ -377,15 +432,20 @@
             div.className = `task-card bg-${task.color}-50 border-4 border-${task.color}-300 rounded-3xl p-6 shadow-lg flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6 relative`;
             div.id = `task-${task.id}`;
             const repeatBadge = task.repeat !== 'None' ? `<span class="bg-${task.color}-200 text-${task.color}-800 text-sm px-3 py-1 rounded-full ml-2 font-bold">${task.repeat}</span>` : '';
+            const descHtml = task.desc ? `<p class="text-lg text-${task.color}-700 mt-2">${task.desc}</p>` : '';
             div.innerHTML = `
-                <div class="bg-${task.color}-500 text-white p-6 rounded-full visual-cue flex-shrink-0">
+                <div class="absolute top-2 right-4">
+                    <button onclick="deleteTask('${task.id}')" class="text-gray-400 hover:text-red-500 p-2 text-xl" title="Delete Task"><i class="fas fa-trash"></i></button>
+                </div>
+                <div class="bg-${task.color}-500 text-white p-6 rounded-full visual-cue flex-shrink-0 mt-4 md:mt-0">
                     <i class="fas ${task.icon} text-5xl"></i>
                 </div>
-                <div class="flex-grow text-center md:text-left w-full">
+                <div class="flex-grow text-center md:text-left w-full mt-2 md:mt-0 px-2">
                     <h3 class="text-3xl font-bold text-${task.color}-900 mb-1">${task.emoji} ${task.name}</h3>
-                    <p class="text-xl text-${task.color}-800 flex items-center justify-center md:justify-start">
+                    <p class="text-xl text-${task.color}-800 flex items-center justify-center md:justify-start font-medium">
                         <i class="fas fa-clock mr-2"></i> ${task.timeStr} ${repeatBadge}
                     </p>
+                    ${descHtml}
                 </div>
                 <div class="flex flex-col space-y-3 w-full md:w-auto flex-shrink-0">
                     <button class="haptic bg-green-500 hover:bg-green-600 text-white font-bold text-2xl py-3 px-8 rounded-2xl shadow flex items-center justify-center transition" onclick="completeTask('${task.id}')">
@@ -401,17 +461,22 @@
 
         function createCompletedCard(task) {
             const div = document.createElement('div');
-            div.className = `task-card bg-gray-100 border-2 border-gray-300 rounded-2xl p-4 flex items-center space-x-4`;
+            div.className = `task-card bg-gray-100 border-2 border-gray-300 rounded-2xl p-4 flex items-center space-x-4 relative`;
+            const descHtml = task.desc ? `<p class="text-md text-gray-500 mt-1">${task.desc}</p>` : '';
             div.innerHTML = `
                 <div class="bg-gray-400 text-white p-3 rounded-full flex-shrink-0">
                     <i class="fas ${task.icon} text-3xl"></i>
                 </div>
-                <div class="flex-grow">
+                <div class="flex-grow pr-8">
                     <h4 class="text-2xl font-bold text-gray-600 line-through">${task.emoji} ${task.name}</h4>
-                    <p class="text-lg text-gray-500">${task.timeStr}</p>
+                    <p class="text-lg text-gray-500 font-medium">${task.timeStr}</p>
+                    ${descHtml}
                 </div>
                 <div class="text-green-600 font-bold text-xl flex items-center pr-4">
                     <i class="fas fa-check-double mr-2"></i> Done
+                </div>
+                <div class="absolute top-2 right-4">
+                    <button onclick="deleteTask('${task.id}')" class="text-gray-400 hover:text-red-500 p-2"><i class="fas fa-trash"></i></button>
                 </div>
             `;
             return div;
@@ -419,10 +484,10 @@
 
         function createUpcomingCard(task) {
             const div = document.createElement('div');
-            div.className = `bg-white border-2 border-${task.color}-200 rounded-2xl p-4 flex justify-between items-center shadow-sm`;
-            // format date for upcoming
+            div.className = `bg-white border-2 border-${task.color}-200 rounded-2xl p-4 flex justify-between items-center shadow-sm relative`;
             const d = new Date(task.date);
             const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+            const descHtml = task.desc ? `<p class="text-md text-gray-500 mt-1">${task.desc}</p>` : '';
             div.innerHTML = `
                 <div class="flex items-center space-x-4">
                     <div class="bg-${task.color}-100 text-${task.color}-500 p-4 rounded-full flex-shrink-0">
@@ -431,9 +496,10 @@
                     <div>
                         <h4 class="text-xl font-bold text-gray-700">${task.emoji} ${task.name}</h4>
                         <p class="text-md text-gray-500 font-medium">${dateStr} at ${task.timeStr}</p>
+                        ${descHtml}
                     </div>
                 </div>
-                <button onclick="deleteTask('${task.id}')" class="text-gray-400 hover:text-red-500 p-2"><i class="fas fa-trash"></i></button>
+                <button onclick="deleteTask('${task.id}')" class="text-gray-400 hover:text-red-500 p-2 absolute top-2 right-4"><i class="fas fa-trash"></i></button>
             `;
             return div;
         }
@@ -493,10 +559,12 @@
         }
 
         function deleteTask(taskId) {
-            let tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
-            tasks = tasks.filter(t => t.id !== taskId);
-            localStorage.setItem('userTasks', JSON.stringify(tasks));
-            renderTasks();
+            if (confirm("Are you sure you want to completely remove this reminder?")) {
+                let tasks = JSON.parse(localStorage.getItem('userTasks') || '[]');
+                tasks = tasks.filter(t => t.id !== taskId);
+                localStorage.setItem('userTasks', JSON.stringify(tasks));
+                renderTasks();
+            }
         }
 
         function playTone() {
@@ -530,6 +598,8 @@
         function addReminder(event) {
             event.preventDefault();
             const name = document.getElementById('task-name').value;
+            const desc = document.getElementById('task-desc').value;
+            const emojiSel = document.getElementById('task-emoji').value;
             const date = document.getElementById('task-date').value;
             let time = document.getElementById('task-time').value;
             const repeat = document.getElementById('task-repeat').value;
@@ -538,12 +608,14 @@
             hours = hours % 12;
             hours = hours ? hours : 12; 
             const timeStr = `${hours}:${minutes} ${ampm}`;
+            
             const theme = getIconForTask(name);
+            const finalEmoji = emojiSel === 'auto' ? theme.emoji : emojiSel;
 
             const task = {
                 id: Date.now().toString(),
-                name, date, timeStr, time, repeat,
-                icon: theme.icon, color: theme.color, emoji: theme.emoji,
+                name, desc, date, timeStr, time, repeat,
+                icon: theme.icon, color: theme.color, emoji: finalEmoji,
                 completed: false
             };
             
@@ -559,6 +631,7 @@
             document.getElementById('special-id').value = '';
             document.getElementById('special-form').reset();
             document.getElementById('special-date').valueAsDate = new Date();
+            document.getElementById('special-repeat').value = 'Yearly';
             document.getElementById('special-modal-title').innerText = 'New Special Day';
             document.getElementById('special-modal').classList.remove('hidden');
         }
@@ -571,15 +644,18 @@
             event.preventDefault();
             const id = document.getElementById('special-id').value || Date.now().toString();
             const name = document.getElementById('special-name').value;
+            const desc = document.getElementById('special-desc').value;
+            const emoji = document.getElementById('special-emoji').value;
             const date = document.getElementById('special-date').value;
+            const repeat = document.getElementById('special-repeat').value;
 
             let days = JSON.parse(localStorage.getItem('specialDays') || '[]');
             
             const existingIndex = days.findIndex(d => d.id === id);
             if (existingIndex > -1) {
-                days[existingIndex] = { id, name, date };
+                days[existingIndex] = { id, name, desc, emoji, date, repeat };
             } else {
-                days.push({ id, name, date });
+                days.push({ id, name, desc, emoji, date, repeat });
             }
 
             localStorage.setItem('specialDays', JSON.stringify(days));
@@ -602,7 +678,10 @@
             if (day) {
                 document.getElementById('special-id').value = day.id;
                 document.getElementById('special-name').value = day.name;
+                document.getElementById('special-desc').value = day.desc || '';
+                document.getElementById('special-emoji').value = day.emoji || '🎂';
                 document.getElementById('special-date').value = day.date;
+                document.getElementById('special-repeat').value = day.repeat || 'Yearly';
                 document.getElementById('special-modal-title').innerText = 'Edit Special Day';
                 document.getElementById('special-modal').classList.remove('hidden');
             }

@@ -7,39 +7,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #fdfbf7;
-            color: #1a202c;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fdfbf7; color: #1a202c; }
         .btn-large { transition: transform 0.2s; }
         .btn-large:hover { transform: scale(1.03); }
         .floating { animation: float 3s ease-in-out infinite; }
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .waving { animation: wave 2.5s infinite; transform-origin: 70% 70%; display: inline-block; }
         @keyframes wave {
-            0% { transform: rotate( 0.0deg) }
-            10% { transform: rotate(14.0deg) }
-            20% { transform: rotate(-8.0deg) }
-            30% { transform: rotate(14.0deg) }
-            40% { transform: rotate(-4.0deg) }
-            50% { transform: rotate(10.0deg) }
-            60% { transform: rotate( 0.0deg) }
-            100% { transform: rotate( 0.0deg) }
+            0%,60%,100% { transform: rotate(0deg); }
+            10%,30%     { transform: rotate(14deg); }
+            20%         { transform: rotate(-8deg); }
+            40%         { transform: rotate(-4deg); }
+            50%         { transform: rotate(10deg); }
         }
-        .mood-icon { transition: transform 0.2s, filter 0.2s; cursor: pointer; }
+        .mood-icon { transition: transform 0.2s, opacity 0.2s; cursor: pointer; }
         .mood-icon:hover { transform: scale(1.15); }
-        
         .gallery-card { scroll-snap-align: start; flex-shrink: 0; width: 100%; max-width: 320px; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
+
     <!-- Top Navigation -->
     <header class="bg-teal-700 text-white p-4 shadow-md sticky top-0 z-50">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
@@ -47,206 +36,171 @@
                 <i class="fas fa-arrow-left text-3xl"></i>
                 <h1 class="text-3xl font-bold">Back to Home</h1>
             </a>
-            <div class="flex items-center space-x-3">
-                <i class="fas fa-heart text-2xl text-rose-300 floating"></i>
-            </div>
+            <i class="fas fa-heart text-2xl text-rose-300 floating"></i>
         </div>
     </header>
 
     <!-- Main Content -->
     <main class="flex-grow w-full max-w-5xl mx-auto p-4 flex flex-col space-y-8 mt-4 pb-12">
-        <!-- Header Section -->
-        <div class="text-center w-full bg-orange-50 p-6 rounded-3xl shadow-sm border-2 border-orange-200">
-            <h2 class="text-4xl font-bold text-orange-800 mb-2">
-                Family Hub <span class="waving text-5xl">👋</span>
-            </h2>
+
+        <!-- Hero Banner -->
+        <div class="text-center bg-orange-50 p-6 rounded-3xl shadow-sm border-2 border-orange-200">
+            <h2 class="text-4xl font-bold text-orange-800 mb-2">Family Hub <span class="waving text-5xl">&#x1F44B;</span></h2>
             <p class="text-2xl text-gray-700">Stay close to your loved ones.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 w-full">
-            
-            <!-- Quick Contacts (Call / Message / Manage) -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+            <!-- Saved Contacts -->
             <div class="md:col-span-12 bg-sky-50 border-4 border-sky-300 p-6 rounded-3xl shadow-md">
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center justify-between mb-5">
                     <h3 class="text-3xl font-bold text-sky-900"><i class="fas fa-address-book text-sky-600 mr-2"></i>Saved Contacts</h3>
-                    <button onclick="openContactModal()" class="bg-sky-500 text-white px-5 py-3 rounded-xl font-bold hover:bg-sky-600 transition shadow-md flex items-center text-lg">
+                    <button onclick="openContactModal()"
+                        class="bg-sky-500 text-white px-5 py-3 rounded-xl font-bold hover:bg-sky-600 transition shadow-md flex items-center text-lg">
                         <i class="fas fa-user-plus mr-2"></i>Add New Contact
                     </button>
                 </div>
-                <!-- Contacts rendered dynamically -->
-                <div id="contacts-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                    <!-- Rendered via JavaScript -->
-                </div>
+                <div id="contacts-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
 
-            <!-- Messages & Voice Notes Inbox -->
-            <div class="md:col-span-6 bg-emerald-50 border-4 border-emerald-300 p-6 rounded-3xl shadow-md">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-3xl font-bold text-emerald-900"><i class="fas fa-inbox text-emerald-600 mr-2"></i>Inbox</h3>
-                </div>
-                <div class="space-y-4 max-h-64 overflow-y-auto pr-2">
+            <!-- Inbox + Send Message -->
+            <div class="md:col-span-6 bg-emerald-50 border-4 border-emerald-300 p-6 rounded-3xl shadow-md flex flex-col">
+                <h3 class="text-3xl font-bold text-emerald-900 mb-4"><i class="fas fa-inbox text-emerald-600 mr-2"></i>Inbox</h3>
+                <div class="space-y-4 max-h-56 overflow-y-auto pr-1 mb-4">
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex items-start space-x-4">
-                        <img src="https://i.pravatar.cc/150?img=47" alt="Sarah" class="w-16 h-16 rounded-full border-2 border-emerald-300 shadow-sm">
+                        <img src="https://i.pravatar.cc/150?img=47" class="w-14 h-14 rounded-full border-2 border-emerald-300">
                         <div>
                             <h4 class="text-xl font-bold text-gray-800">Sarah</h4>
-                            <p class="text-lg text-gray-600 mt-1">"Good morning, Mom! Have a lovely day. We love you!"</p>
+                            <p class="text-lg text-gray-600 mt-1">"Good morning! Have a lovely day. We love you!"</p>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Send Message Area -->
-                <div class="mt-6 bg-emerald-100 p-5 rounded-2xl border-2 border-emerald-200 border-dashed">
-                    <h4 class="text-xl font-bold text-emerald-800 mb-3"><i class="fas fa-paper-plane mr-2"></i>Send Message to Family</h4>
+
+                <!-- Send Message -->
+                <div class="bg-emerald-100 p-5 rounded-2xl border-2 border-emerald-200 border-dashed mt-auto">
+                    <h4 class="text-xl font-bold text-emerald-800 mb-3"><i class="fas fa-paper-plane mr-2"></i>Send Message</h4>
                     <div class="flex flex-col space-y-3">
-                        <label class="text-emerald-900 font-semibold">Select Recipient:</label>
-                        <select id="msg-recipient" class="p-3 rounded-xl border-2 border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg bg-white">
-                            <option value="all">📢 Broadcast to All Contacts</option>
-                            <!-- Dynamically populated by JS -->
+                        <label class="font-semibold text-emerald-900">Select Recipient:</label>
+                        <select id="msg-recipient"
+                            class="p-3 rounded-xl border-2 border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg bg-white">
+                            <option value="all">&#x1F4E2; Broadcast to All Contacts</option>
                         </select>
-                        <textarea id="msg-text" placeholder="Type your message here..." class="p-3 rounded-xl border-2 border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none h-24 text-lg"></textarea>
-                        <button id="send-msg-btn" onclick="sendMessage()" class="bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-600 transition shadow-sm self-end text-lg w-full md:w-auto">
+                        <textarea id="msg-text" placeholder="Type your message here..."
+                            class="p-3 rounded-xl border-2 border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none h-24 text-lg"></textarea>
+                        <button id="send-msg-btn" onclick="sendMessage()"
+                            class="bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-600 transition shadow-sm text-lg w-full">
                             Send Message
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Reminders from Family -->
+            <!-- Family Reminders -->
             <div class="md:col-span-6 bg-rose-50 border-4 border-rose-300 p-6 rounded-3xl shadow-md flex flex-col">
                 <h3 class="text-3xl font-bold text-rose-900 mb-4"><i class="fas fa-ribbon text-rose-600 mr-2"></i>Family Reminders</h3>
-                <div id="reminder-list" class="space-y-4 flex-grow mb-6">
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-8 border-rose-400 flex items-center justify-between">
+
+                <div id="reminder-list" class="space-y-4 flex-grow mb-6 max-h-64 overflow-y-auto pr-1">
+                    <!-- Default example -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-8 border-rose-400 flex items-start justify-between gap-3">
                         <div>
                             <p class="text-xl font-bold text-gray-800">"Dad, don't forget your walk today!"</p>
-                            <p class="text-md text-gray-500 mt-1 font-semibold">From Sarah • <span class="text-rose-500"><i class="fas fa-eye"></i> Seen by all family</span></p>
+                            <p class="text-sm text-gray-500 mt-1 font-semibold">From <span class="text-rose-600 font-bold">Sarah</span> &bull; 9:00 AM</p>
+                            <p class="text-sm text-gray-400 mt-1"><i class="fas fa-eye mr-1 text-rose-400"></i><span class="text-rose-500 font-semibold">Seen by all family</span></p>
                         </div>
-                        <i class="fas fa-walking text-4xl text-rose-300"></i>
+                        <i class="fas fa-walking text-4xl text-rose-300 mt-1 flex-shrink-0"></i>
                     </div>
                 </div>
-                
-                <!-- Family Portal Simulation -->
+
+                <!-- Add Reminder -->
                 <div class="bg-rose-100 p-5 rounded-2xl border-2 border-rose-200 border-dashed mt-auto">
-                    <h4 class="text-xl font-bold text-rose-800 mb-2"><i class="fas fa-mobile-alt mr-2"></i>Add Reminder (Visible to All)</h4>
-                    <p class="text-rose-700 text-sm mb-3">Any reminder added here will be shared with all saved contacts.</p>
+                    <h4 class="text-xl font-bold text-rose-800 mb-1"><i class="fas fa-bell mr-2"></i>Send a Reminder</h4>
+                    <p class="text-rose-700 text-sm mb-3">This will appear in every family member's reminder list.</p>
                     <div class="flex flex-col space-y-2">
-                        <input type="text" id="new-reminder-input" placeholder="Type a new reminder..." class="p-3 rounded-xl border-2 border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500 text-lg">
-                        <button onclick="addReminder()" class="bg-rose-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-rose-600 transition text-lg shadow-sm">Post Reminder</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Family Map & Location -->
-            <div class="md:col-span-12 bg-lime-50 border-4 border-lime-300 p-6 rounded-3xl shadow-md">
-                <h3 class="text-3xl font-bold text-lime-900 mb-4"><i class="fas fa-map-marker-alt text-lime-600 mr-2"></i>Family Map</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="md:col-span-2 bg-lime-100 rounded-2xl h-72 flex items-center justify-center relative overflow-hidden border-2 border-lime-300 shadow-inner">
-                        <!-- Background Pattern -->
-                        <div class="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0ibm9uZSI+PC9yZWN0Pgo8Y2lyY2xlIGN4PSIyIiBjeT0iMiIgcj0iMiIgZmlsbD0iIzAwMCI+PC9jaXJjbGU+Cjwvc3ZnPg==')]"></div>
-                        <i class="fas fa-map text-8xl text-lime-200"></i>
-                        
-                        <!-- Map Pins -->
-                        <div id="map-pins" class="absolute inset-0"></div>
-                        
-                        <!-- User's Live Pin (Hidden until shared) -->
-                        <div id="my-location-pin" class="absolute flex flex-col items-center hidden" style="top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">
-                            <div class="bg-white p-1 rounded-full shadow-lg border-2 border-lime-500 mb-1 animate-pulse">
-                                <img src="https://ui-avatars.com/api/?name=Me&background=random" class="w-8 h-8 rounded-full">
-                            </div>
-                            <i class="fas fa-map-marker text-4xl text-lime-600 drop-shadow-md"></i>
-                            <span class="bg-lime-600 text-white text-xs font-bold px-2 py-1 rounded-full mt-1">Me</span>
-                        </div>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border-2 border-lime-100 flex flex-col justify-between">
-                        <div>
-                            <h4 class="font-bold text-lime-800 mb-4 text-xl border-b pb-2">Active Locations</h4>
-                            <ul id="location-list" class="space-y-4 max-h-40 overflow-y-auto pr-2">
-                                <!-- Populated dynamically based on contacts -->
-                            </ul>
-                        </div>
-                        <button id="share-loc-btn" onclick="shareLocation()" class="w-full bg-lime-500 text-white py-3 rounded-xl font-bold hover:bg-lime-600 transition shadow-md mt-4 text-lg">
-                            <i class="fas fa-location-arrow mr-2"></i>Share My Location
+                        <input type="text" id="new-reminder-input" placeholder="e.g., Time for your afternoon tea"
+                            class="p-3 rounded-xl border-2 border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500 text-lg">
+                        <button onclick="addReminder()"
+                            class="bg-rose-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-rose-600 transition text-lg shadow-sm">
+                            Post Reminder
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Mood Tracker & Family Mood Board -->
+            <!-- Family Mood Board -->
             <div class="md:col-span-12 bg-indigo-50 border-4 border-indigo-300 p-6 rounded-3xl shadow-md">
-                <h3 class="text-3xl font-bold text-indigo-900 mb-2"><i class="fas fa-face-smile text-indigo-600 mr-2"></i>Family Mood Board</h3>
-                <p class="text-lg text-gray-600 mb-6">Share how you feel and check on everyone else.</p>
-                
+                <h3 class="text-3xl font-bold text-indigo-900 mb-1"><i class="fas fa-face-smile text-indigo-600 mr-2"></i>Family Mood Board</h3>
+                <p class="text-lg text-gray-600 mb-6">Tap an emoji to share how you feel &mdash; your family will be notified instantly!</p>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- User's Mood -->
+                    <!-- User Mood -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border-2 border-indigo-200">
-                        <h4 class="text-xl font-bold text-indigo-800 mb-4 text-center">How are you feeling today?</h4>
+                        <h4 class="text-xl font-bold text-indigo-800 mb-5 text-center">How are you feeling today?</h4>
                         <div class="flex justify-around items-center">
-                            <div class="text-center mood-icon" onclick="selectMood(this, '😄')">
-                                <span class="text-5xl block mb-2">😄</span>
+                            <div class="text-center mood-icon" onclick="selectMood(this,'&#x1F604;','Great')">
+                                <span class="text-5xl block mb-2">&#x1F604;</span>
                                 <span class="text-lg font-bold text-gray-600">Great</span>
                             </div>
-                            <div class="text-center mood-icon" onclick="selectMood(this, '🙂')">
-                                <span class="text-5xl block mb-2">🙂</span>
+                            <div class="text-center mood-icon" onclick="selectMood(this,'&#x1F642;','Good')">
+                                <span class="text-5xl block mb-2">&#x1F642;</span>
                                 <span class="text-lg font-bold text-gray-600">Good</span>
                             </div>
-                            <div class="text-center mood-icon" onclick="selectMood(this, '😐')">
-                                <span class="text-5xl block mb-2">😐</span>
+                            <div class="text-center mood-icon" onclick="selectMood(this,'&#x1F610;','Okay')">
+                                <span class="text-5xl block mb-2">&#x1F610;</span>
                                 <span class="text-lg font-bold text-gray-600">Okay</span>
                             </div>
-                            <div class="text-center mood-icon" onclick="selectMood(this, '😔')">
-                                <span class="text-5xl block mb-2">😔</span>
+                            <div class="text-center mood-icon" onclick="selectMood(this,'&#x1F614;','Down')">
+                                <span class="text-5xl block mb-2">&#x1F614;</span>
                                 <span class="text-lg font-bold text-gray-600">Down</span>
                             </div>
                         </div>
-                        <div id="mood-feedback" class="mt-6 text-center hidden">
+                        <div id="mood-feedback" class="mt-5 text-center hidden">
                             <p class="text-lg font-bold text-indigo-700 bg-indigo-100 py-3 rounded-xl border border-indigo-200">
-                                <i class="fas fa-check-circle mr-2"></i>Mood updated! Your family can now see it.
+                                <i class="fas fa-check-circle mr-2"></i>Mood shared! Your family can now see it.
                             </p>
                         </div>
                     </div>
-                    
-                    <!-- Family Members' Moods -->
+
+                    <!-- Family Moods -->
                     <div class="bg-indigo-100 p-6 rounded-2xl border-2 border-indigo-200">
                         <h4 class="text-xl font-bold text-indigo-800 mb-4">How is everyone else doing?</h4>
-                        <div id="family-moods" class="grid grid-cols-2 gap-4 max-h-48 overflow-y-auto pr-2">
-                            <!-- Populated dynamically -->
-                        </div>
+                        <div id="family-moods" class="grid grid-cols-2 gap-4 max-h-48 overflow-y-auto pr-1"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Family Gallery (Photos & Videos) -->
-            <div class="md:col-span-12 bg-amber-50 border-4 border-amber-300 p-6 rounded-3xl shadow-md overflow-hidden">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
+            <!-- Shared Gallery -->
+            <div class="md:col-span-12 bg-amber-50 border-4 border-amber-300 p-6 rounded-3xl shadow-md">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 space-y-3 sm:space-y-0">
                     <div>
                         <h3 class="text-3xl font-bold text-amber-900"><i class="fas fa-photo-video text-amber-600 mr-2"></i>Shared Gallery</h3>
-                        <p class="text-amber-800 font-semibold mt-1">Photos & Videos visible to all your contacts.</p>
+                        <p class="text-amber-800 font-semibold mt-1">Photos &amp; Videos shared with all your contacts.</p>
                     </div>
-                    <div>
-                        <!-- Accepts both images and videos -->
-                        <input type="file" id="media-upload" class="hidden" accept="image/*,video/*" onchange="addMedia(event)">
-                        <button onclick="document.getElementById('media-upload').click()" class="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold text-lg btn-large hover:bg-amber-600 shadow-sm flex items-center">
-                            <i class="fas fa-upload mr-2"></i>Upload Photo / Video
-                        </button>
-                    </div>
+                    <input type="file" id="media-upload" class="hidden" accept="image/*,video/*" onchange="addMedia(event)">
+                    <button onclick="document.getElementById('media-upload').click()"
+                        class="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold text-lg btn-large hover:bg-amber-600 shadow-sm flex items-center">
+                        <i class="fas fa-upload mr-2"></i>Upload Photo / Video
+                    </button>
                 </div>
-                <div id="gallery-container" class="flex overflow-x-auto space-x-6 pb-4 hide-scrollbar snap-x mt-6">
+                <div id="gallery-container" class="flex overflow-x-auto space-x-6 pb-4 hide-scrollbar snap-x">
                     <div class="gallery-card bg-white p-3 rounded-2xl shadow-sm border-2 border-amber-200 snap-center">
-                        <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=600&auto=format&fit=crop" class="w-full h-52 object-cover rounded-xl mb-3 shadow-sm" alt="Family dinner">
-                        <p class="text-lg font-bold text-gray-800 text-center">Your grandson's birthday! 🎂</p>
+                        <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=600&auto=format&fit=crop"
+                            class="w-full h-52 object-cover rounded-xl mb-3 shadow-sm" alt="Family dinner">
+                        <p class="text-lg font-bold text-gray-800 text-center">Your grandson's birthday! &#x1F382;</p>
                     </div>
                     <div class="gallery-card bg-white p-3 rounded-2xl shadow-sm border-2 border-amber-200 snap-center">
-                        <img src="https://images.unsplash.com/photo-1609220136736-443140cffec6?q=80&w=600&auto=format&fit=crop" class="w-full h-52 object-cover rounded-xl mb-3 shadow-sm" alt="Park visit">
-                        <p class="text-lg font-bold text-gray-800 text-center">Sunny day at the park ☀️</p>
+                        <img src="https://images.unsplash.com/photo-1609220136736-443140cffec6?q=80&w=600&auto=format&fit=crop"
+                            class="w-full h-52 object-cover rounded-xl mb-3 shadow-sm" alt="Park visit">
+                        <p class="text-lg font-bold text-gray-800 text-center">Sunny day at the park &#x2600;&#xFE0F;</p>
                     </div>
                 </div>
             </div>
 
             <!-- Shared Activities -->
             <div class="md:col-span-12 bg-purple-50 border-4 border-purple-300 p-6 rounded-3xl shadow-md">
-                <h3 class="text-3xl font-bold text-purple-900 mb-4"><i class="fas fa-puzzle-piece text-purple-600 mr-2"></i>Shared Activities</h3>
+                <h3 class="text-3xl font-bold text-purple-900 mb-4"><i class="fas fa-puzzle-piece text-purple-600 mr-2"></i>Play Together</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <a href="memory.html" class="block bg-white p-5 rounded-2xl shadow-sm border-2 border-purple-200 hover:border-purple-400 transition flex items-center justify-between group">
-                        <div class="flex items-center space-x-5">
+                        <div class="flex items-center space-x-4">
                             <div class="bg-purple-100 p-4 rounded-full text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition">
                                 <i class="fas fa-brain text-3xl"></i>
                             </div>
@@ -258,7 +212,7 @@
                         <button class="bg-purple-500 text-white px-5 py-3 rounded-xl font-bold hover:bg-purple-600 text-lg">Play</button>
                     </a>
                     <a href="jigsaw-puzzle.html" class="block bg-white p-5 rounded-2xl shadow-sm border-2 border-blue-200 hover:border-blue-400 transition flex items-center justify-between group">
-                        <div class="flex items-center space-x-5">
+                        <div class="flex items-center space-x-4">
                             <div class="bg-blue-100 p-4 rounded-full text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
                                 <i class="fas fa-border-all text-3xl"></i>
                             </div>
@@ -271,111 +225,151 @@
                     </a>
                 </div>
             </div>
+
         </div>
     </main>
 
-    <!-- Contact Modal -->
-    <div id="contact-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full mx-4 border-4 border-sky-300">
-            <h3 id="modal-title" class="text-3xl font-bold text-sky-900 mb-6">Add Contact</h3>
-            <input type="hidden" id="contact-id">
-            <div class="space-y-5">
+    <!-- Contact Modal Window -->
+    <div id="contact-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full border-4 border-sky-300 overflow-hidden">
+            <!-- Header bar -->
+            <div class="bg-gradient-to-r from-sky-500 to-teal-500 px-8 py-5 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i id="modal-icon" class="fas fa-user-plus text-white text-2xl"></i>
+                    <h3 id="modal-title" class="text-2xl font-bold text-white">Add New Contact</h3>
+                </div>
+                <button onclick="closeContactModal()"
+                    class="text-white hover:text-sky-100 w-10 h-10 rounded-full hover:bg-white/20 flex items-center justify-center transition text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <!-- Body -->
+            <div class="p-8 space-y-5">
+                <input type="hidden" id="contact-id">
                 <div>
-                    <label class="block text-gray-700 font-bold mb-2 text-xl">Contact Name</label>
-                    <input type="text" id="contact-name" class="w-full p-4 rounded-xl border-2 border-gray-300 focus:outline-none focus:border-sky-500 text-lg" placeholder="e.g., Sarah (Daughter)">
+                    <label class="block text-gray-700 font-bold mb-2 text-lg">
+                        <i class="fas fa-user text-sky-500 mr-2"></i>Full Name
+                    </label>
+                    <input type="text" id="contact-name" placeholder="e.g., Sarah (Daughter)"
+                        class="w-full p-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-sky-400 text-xl bg-gray-50">
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-bold mb-2 text-xl">Phone Number</label>
-                    <input type="tel" id="contact-phone" class="w-full p-4 rounded-xl border-2 border-gray-300 focus:outline-none focus:border-sky-500 text-lg" placeholder="+1 (555) 123-4567">
+                    <label class="block text-gray-700 font-bold mb-2 text-lg">
+                        <i class="fas fa-phone text-sky-500 mr-2"></i>Mobile Number
+                    </label>
+                    <input type="tel" id="contact-phone" placeholder="+91 98765 43210"
+                        class="w-full p-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-sky-400 text-xl bg-gray-50">
+                </div>
+                <div class="border-t border-gray-100 pt-5 flex justify-end space-x-3">
+                    <button onclick="closeContactModal()"
+                        class="px-6 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 text-lg transition border border-gray-200">
+                        Cancel
+                    </button>
+                    <button onclick="saveContact()"
+                        class="px-8 py-3 rounded-xl font-bold text-white bg-sky-500 hover:bg-sky-600 text-lg transition shadow-md">
+                        <i class="fas fa-save mr-2"></i>Save Contact
+                    </button>
                 </div>
             </div>
-            <div class="flex justify-end space-x-4 mt-8">
-                <button onclick="closeContactModal()" class="px-6 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 text-lg transition">Cancel</button>
-                <button onclick="saveContact()" class="px-6 py-3 rounded-xl font-bold text-white bg-sky-500 hover:bg-sky-600 text-lg transition shadow-md"><i class="fas fa-save mr-2"></i>Save Contact</button>
-            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 right-8 z-[100] pointer-events-none"
+        style="opacity:0; transform:translateY(20px); transition: opacity 0.3s, transform 0.3s;">
+        <div class="bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center space-x-3 border border-gray-700 max-w-sm">
+            <span id="toast-icon" class="text-3xl flex-shrink-0"></span>
+            <p id="toast-msg" class="text-lg font-bold leading-tight"></p>
         </div>
     </div>
 
     <script>
         // State
         let contacts = [
-            { id: 1, name: 'Sarah (Daughter)', phone: '+1 (555) 123-4567', avatar: 'https://i.pravatar.cc/150?img=47' },
-            { id: 2, name: 'Mark (Son)', phone: '+1 (555) 987-6543', avatar: 'https://i.pravatar.cc/150?img=11' }
+            { id: 1, name: 'Sarah (Daughter)', phone: '+91 98765 43210', avatar: 'https://i.pravatar.cc/150?img=47' },
+            { id: 2, name: 'Mark (Son)',        phone: '+91 91234 56789', avatar: 'https://i.pravatar.cc/150?img=11' }
         ];
-        
-        const possibleMoods = ['😄', '🙂', '😐', '😔'];
+        const possibleMoods = ['\u{1F604}', '\u{1F642}', '\u{1F610}', '\u{1F614}'];
 
-        // Core Render Function
-        function updateUI() {
-            renderContacts();
-            renderFamilyMoods();
-            renderLocations();
+        // Toast
+        let _tt = null;
+        function showToast(icon, msg, ms) {
+            ms = ms || 3500;
+            var el = document.getElementById('toast');
+            document.getElementById('toast-icon').textContent = icon;
+            document.getElementById('toast-msg').textContent  = msg;
+            el.style.opacity   = '1';
+            el.style.transform = 'translateY(0)';
+            if (_tt) clearTimeout(_tt);
+            _tt = setTimeout(function() {
+                el.style.opacity   = '0';
+                el.style.transform = 'translateY(20px)';
+            }, ms);
         }
 
-        // 1. Contacts Logic
+        // Core
+        function updateUI() { renderContacts(); renderFamilyMoods(); }
+
+        // Contacts
         function renderContacts() {
-            const container = document.getElementById('contacts-container');
-            const select = document.getElementById('msg-recipient');
-            
+            var container = document.getElementById('contacts-container');
+            var select    = document.getElementById('msg-recipient');
             container.innerHTML = '';
-            select.innerHTML = '<option value="all">📢 Broadcast to All Contacts</option>';
+            select.innerHTML    = '<option value="all">&#x1F4E2; Broadcast to All Contacts</option>';
 
-            contacts.forEach(contact => {
-                // Dropdown population
-                const option = document.createElement('option');
-                option.value = contact.id;
-                option.textContent = '👤 ' + contact.name;
-                select.appendChild(option);
+            if (contacts.length === 0) {
+                container.innerHTML = '<div class="col-span-3 text-center py-10 text-sky-400"><i class="fas fa-user-friends text-6xl mb-4 block opacity-30"></i><p class="text-xl font-bold">No contacts yet. Add one above!</p></div>';
+                return;
+            }
 
-                // Grid cards
-                const card = document.createElement('div');
-                card.className = 'bg-white p-5 rounded-2xl shadow-sm border-2 border-sky-200 flex flex-col relative transition hover:shadow-md';
-                const cleanPhone = contact.phone.replace(/[^0-9+]/g, '');
+            contacts.forEach(function(c) {
+                var opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = '\u{1F464} ' + c.name;
+                select.appendChild(opt);
 
-                card.innerHTML = `
-                    <div class="absolute top-3 right-3 flex space-x-2">
-                        <button onclick="openContactModal(${contact.id})" class="text-sky-700 bg-sky-100 hover:bg-sky-200 px-3 py-1 rounded-lg text-sm font-bold transition shadow-sm border border-sky-200"><i class="fas fa-edit mr-1"></i>Edit</button>
-                        <button onclick="deleteContact(${contact.id})" class="text-red-700 bg-red-100 hover:bg-red-200 px-3 py-1 rounded-lg text-sm font-bold transition shadow-sm border border-red-200"><i class="fas fa-trash mr-1"></i>Remove</button>
-                    </div>
-                    <div class="flex flex-col items-center mb-5 mt-8">
-                        <img src="${contact.avatar}" class="w-24 h-24 rounded-full border-4 border-sky-300 shadow-sm mb-3">
-                        <h4 class="text-2xl font-bold text-gray-800 text-center">${contact.name}</h4>
-                        <p class="text-lg text-gray-500 font-mono mt-1 text-center">${contact.phone}</p>
-                    </div>
-                    <div class="flex space-x-4 justify-center mt-auto border-t pt-4">
-                        <a href="tel:${cleanPhone}" class="flex-1 bg-green-50 text-green-700 border border-green-200 py-2 rounded-xl flex items-center justify-center font-bold hover:bg-green-100 transition shadow-sm" title="Call">
-                            <i class="fas fa-phone-alt mr-2 text-xl"></i> Call
-                        </a>
-                        <a href="sms:${cleanPhone}" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-2 rounded-xl flex items-center justify-center font-bold hover:bg-blue-100 transition shadow-sm" title="Message">
-                            <i class="fas fa-comment-dots mr-2 text-xl"></i> Msg
-                        </a>
-                    </div>
-                `;
+                var cleanPhone = c.phone.replace(/[^0-9+]/g, '');
+                var card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-2xl shadow-sm border-2 border-sky-200 flex flex-col transition hover:shadow-md relative';
+                card.innerHTML = '<div class="absolute top-3 right-3 flex space-x-2">'
+                    + '<button onclick="openContactModal(' + c.id + ')" class="text-sky-700 bg-sky-50 hover:bg-sky-100 px-3 py-1 rounded-lg text-sm font-bold border border-sky-200 transition"><i class="fas fa-edit mr-1"></i>Edit</button>'
+                    + '<button onclick="deleteContact(' + c.id + ')" class="text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg text-sm font-bold border border-red-200 transition"><i class="fas fa-trash mr-1"></i>Remove</button>'
+                    + '</div>'
+                    + '<div class="flex flex-col items-center mb-5 mt-8">'
+                    + '<img src="' + c.avatar + '" class="w-24 h-24 rounded-full border-4 border-sky-300 shadow-sm mb-3">'
+                    + '<h4 class="text-2xl font-bold text-gray-800 text-center">' + c.name + '</h4>'
+                    + '<p class="text-lg text-gray-500 font-mono mt-1 text-center">' + c.phone + '</p>'
+                    + '</div>'
+                    + '<div class="flex space-x-3 justify-center mt-auto border-t pt-4">'
+                    + '<a href="tel:' + cleanPhone + '" class="flex-1 bg-green-50 text-green-700 border border-green-200 py-2 rounded-xl flex items-center justify-center font-bold hover:bg-green-100 transition"><i class="fas fa-phone-alt mr-2 text-xl"></i>Call</a>'
+                    + '<a href="sms:' + cleanPhone + '" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-2 rounded-xl flex items-center justify-center font-bold hover:bg-blue-100 transition"><i class="fas fa-comment-dots mr-2 text-xl"></i>Msg</a>'
+                    + '</div>';
                 container.appendChild(card);
             });
         }
 
-        function openContactModal(id = null) {
-            const modal = document.getElementById('contact-modal');
-            const title = document.getElementById('modal-title');
-            const idInput = document.getElementById('contact-id');
-            const nameInput = document.getElementById('contact-name');
-            const phoneInput = document.getElementById('contact-phone');
-
+        function openContactModal(id) {
+            id = id || null;
+            var modal   = document.getElementById('contact-modal');
+            var title   = document.getElementById('modal-title');
+            var icon    = document.getElementById('modal-icon');
+            var idIn    = document.getElementById('contact-id');
+            var nameIn  = document.getElementById('contact-name');
+            var phoneIn = document.getElementById('contact-phone');
             if (id) {
-                const contact = contacts.find(c => c.id === id);
-                title.textContent = 'Edit Contact Information';
-                idInput.value = contact.id;
-                nameInput.value = contact.name;
-                phoneInput.value = contact.phone;
+                var c = contacts.find(function(x) { return x.id === id; });
+                title.textContent = 'Edit Contact';
+                icon.className    = 'fas fa-user-edit text-white text-2xl';
+                idIn.value        = c.id;
+                nameIn.value      = c.name;
+                phoneIn.value     = c.phone;
             } else {
-                title.textContent = 'Add a New Contact';
-                idInput.value = '';
-                nameInput.value = '';
-                phoneInput.value = '';
+                title.textContent = 'Add New Contact';
+                icon.className    = 'fas fa-user-plus text-white text-2xl';
+                idIn.value = ''; nameIn.value = ''; phoneIn.value = '';
             }
-            
             modal.classList.remove('hidden');
+            nameIn.focus();
         }
 
         function closeContactModal() {
@@ -383,225 +377,212 @@
         }
 
         function saveContact() {
-            const id = document.getElementById('contact-id').value;
-            const name = document.getElementById('contact-name').value.trim();
-            const phone = document.getElementById('contact-phone').value.trim();
-
-            if (!name || !phone) {
-                alert('Please enter both a name and a phone number.');
-                return;
-            }
+            var id    = document.getElementById('contact-id').value;
+            var name  = document.getElementById('contact-name').value.trim();
+            var phone = document.getElementById('contact-phone').value.trim();
+            if (!name || !phone) { showToast('\u26A0\uFE0F', 'Please enter both name and phone number.'); return; }
 
             if (id) {
-                const contact = contacts.find(c => c.id === parseInt(id));
-                contact.name = name;
-                contact.phone = phone;
+                var c = contacts.find(function(x) { return x.id === parseInt(id); });
+                c.name = name; c.phone = phone;
+                showToast('\u2705', name + ' updated!');
             } else {
-                contacts.push({
-                    id: Date.now(),
-                    name: name,
-                    phone: phone,
-                    avatar: \`https://i.pravatar.cc/150?img=\${Math.floor(Math.random() * 70)}\`
-                });
+                contacts.push({ id: Date.now(), name: name, phone: phone, avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random()*70) });
+                showToast('\u{1F389}', name + ' added to Family Hub!');
             }
-
             closeContactModal();
             updateUI();
         }
 
         function deleteContact(id) {
-            if (confirm('Are you sure you want to remove this contact from your Family Hub?')) {
-                contacts = contacts.filter(c => c.id !== id);
+            var c = contacts.find(function(x) { return x.id === id; });
+            if (confirm('Remove ' + c.name + ' from your Family Hub?')) {
+                contacts = contacts.filter(function(x) { return x.id !== id; });
                 updateUI();
+                showToast('\u{1F5D1}\uFE0F', c.name + ' removed.');
             }
         }
 
-        // 2. Messaging Logic
+        // Close on backdrop click
+        document.getElementById('contact-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeContactModal();
+        });
+
+        // Messaging
         function sendMessage() {
-            const text = document.getElementById('msg-text').value.trim();
-            const recipient = document.getElementById('msg-recipient');
-            if (!text) {
-                alert("Please type a message first.");
-                return;
+            var text = document.getElementById('msg-text').value.trim();
+            var sel  = document.getElementById('msg-recipient');
+            if (!text) { showToast('\u270F\uFE0F', 'Please type a message first.'); return; }
+
+            var btn  = document.getElementById('send-msg-btn');
+            var orig = btn.innerHTML;
+            var who  = 'Everyone';
+            if (sel.value !== 'all') {
+                var found = contacts.find(function(c) { return c.id == sel.value; });
+                if (found) who = found.name;
             }
-            
-            const btn = document.getElementById('send-msg-btn');
-            const originalText = btn.innerHTML;
-            
-            let recipientName = "Everyone";
-            if(recipient.value !== "all") {
-                recipientName = contacts.find(c => c.id == recipient.value).name;
-            }
-            
-            btn.innerHTML = \`<i class="fas fa-check-circle mr-2"></i>Sent to \${recipientName}!\`;
-            btn.classList.replace('bg-emerald-500', 'bg-green-600');
-            btn.classList.replace('hover:bg-emerald-600', 'hover:bg-green-700');
-            
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.classList.replace('bg-green-600', 'bg-emerald-500');
-                btn.classList.replace('hover:bg-green-700', 'hover:bg-emerald-600');
+
+            btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Sent to ' + who + '!';
+            btn.classList.replace('bg-emerald-500','bg-green-600');
+            btn.classList.replace('hover:bg-emerald-600','hover:bg-green-700');
+            showToast('\u{1F4AC}', 'Message sent to ' + who + '!');
+
+            setTimeout(function() {
+                btn.innerHTML = orig;
+                btn.classList.replace('bg-green-600','bg-emerald-500');
+                btn.classList.replace('hover:bg-green-700','hover:bg-emerald-600');
                 document.getElementById('msg-text').value = '';
             }, 3000);
         }
 
-        // 3. Reminders Logic
-        function addReminder() {
-            const input = document.getElementById('new-reminder-input');
-            const text = input.value.trim();
-            if (text) {
-                const list = document.getElementById('reminder-list');
-                const newReminder = document.createElement('div');
-                newReminder.className = 'bg-white p-4 rounded-2xl shadow-sm border-l-8 border-green-400 flex items-center justify-between animate-pulse';
-                
-                // Construct a string of names who can see this
-                const names = contacts.map(c => c.name.split(' ')[0]).join(', ');
-                const visibilityText = names ? \`Visible to: \${names}\` : "Visible to: Family";
+        // AI Icon Picker – analyses reminder text and returns best icon + colour
+        function aiPickIcon(text) {
+            var t = text.toLowerCase();
 
-                newReminder.innerHTML = `
-                    <div>
-                        <p class="text-xl font-bold text-gray-800">"${text}"</p>
-                        <p class="text-md text-gray-500 mt-1 font-semibold">From Family • <span class="text-green-600"><i class="fas fa-eye"></i> \${visibilityText}</span></p>
-                    </div>
-                    <i class="fas fa-bell text-4xl text-green-300"></i>
-                `;
-                list.prepend(newReminder);
-                input.value = '';
-                
-                setTimeout(() => {
-                    newReminder.classList.remove('animate-pulse');
-                }, 2000);
+            // Rules: ordered from specific to generic
+            var rules = [
+                // Health & medicine
+                { words: ['medicine','tablet','pill','capsule','dose','drug','injection','insulin'],  icon: 'fa-pills',            color: 'rose',   emoji: '&#x1F48A;' },
+                { words: ['doctor','appointment','hospital','clinic','checkup','check-up','test','blood','scan','x-ray'], icon: 'fa-stethoscope',    color: 'red',    emoji: '&#x1FA7A;' },
+                { words: ['exercise','walk','run','yoga','stretch','gym','jog','steps','cardio'],      icon: 'fa-person-walking',   color: 'green',  emoji: '&#x1F6B6;' },
+                // Food & drink
+                { words: ['water','drink','hydrat','fluid','juice'],                                   icon: 'fa-droplet',          color: 'sky',    emoji: '&#x1F4A7;' },
+                { words: ['lunch','dinner','breakfast','eat','meal','food','snack','fruit','vegetable','diet'], icon: 'fa-utensils', color: 'orange', emoji: '&#x1F374;' },
+                { words: ['tea','coffee','cup','mug'],                                                 icon: 'fa-mug-hot',          color: 'amber',  emoji: '&#x2615;' },
+                // Sleep & rest
+                { words: ['sleep','nap','rest','bed','night'],                                         icon: 'fa-moon',             color: 'indigo', emoji: '&#x1F319;' },
+                // Calls & social
+                { words: ['call','phone','video','chat','talk'],                                       icon: 'fa-phone-alt',        color: 'emerald',emoji: '&#x1F4DE;' },
+                // Birthday & celebration
+                { words: ['birthday','anniversary','celebrate','party','cake','gift'],                 icon: 'fa-cake-candles',     color: 'pink',   emoji: '&#x1F382;' },
+                // Prayer & spiritual
+                { words: ['pray','prayer','temple','church','mosque','pooja','god','worship'],         icon: 'fa-hands-praying',    color: 'purple', emoji: '&#x1F64F;' },
+                // Outdoors & nature
+                { words: ['garden','plant','water plant','flowers','tree','park'],                     icon: 'fa-seedling',         color: 'lime',   emoji: '&#x1F331;' },
+                // Reading & learning
+                { words: ['read','book','news','study','learn'],                                       icon: 'fa-book-open',        color: 'blue',   emoji: '&#x1F4D6;' },
+                // Reminders & alerts
+                { words: ['remind','remember','don\'t forget','forget','check'],                       icon: 'fa-bell',             color: 'yellow', emoji: '&#x1F514;' },
+                // Heart / love
+                { words: ['love','miss','hug','care','thinking of'],                                   icon: 'fa-heart',            color: 'rose',   emoji: '&#x2764;&#xFE0F;' },
+                // Weather
+                { words: ['umbrella','rain','cold','warm','coat','jacket','sweater'],                  icon: 'fa-cloud-sun',        color: 'sky',    emoji: '&#x26C5;' },
+                // Travel
+                { words: ['travel','trip','visit','drive','car','taxi','bus','train','flight'],        icon: 'fa-car',              color: 'teal',   emoji: '&#x1F697;' }
+            ];
+
+            for (var i = 0; i < rules.length; i++) {
+                var r = rules[i];
+                for (var j = 0; j < r.words.length; j++) {
+                    if (t.indexOf(r.words[j]) !== -1) {
+                        return { icon: r.icon, color: r.color, emoji: r.emoji };
+                    }
+                }
             }
+            // Default fallback
+            return { icon: 'fa-bell', color: 'teal', emoji: '&#x1F514;' };
         }
 
-        // 4. Mood Logic
-        function selectMood(element, emoji) {
-            document.querySelectorAll('.mood-icon').forEach(el => {
-                el.style.opacity = '0.5';
-                el.style.transform = 'scale(0.9)';
-            });
-            element.style.opacity = '1';
-            element.style.transform = 'scale(1.2)';
-            
-            const feedback = document.getElementById('mood-feedback');
-            feedback.classList.remove('hidden');
-            feedback.classList.add('animate-pulse');
-            setTimeout(() => {
-                feedback.classList.remove('animate-pulse');
-            }, 2000);
+        // Color map for border + text
+        var colorMap = {
+            rose:    { border: 'border-rose-400',    iconCls: 'text-rose-300'    },
+            red:     { border: 'border-red-400',     iconCls: 'text-red-300'     },
+            green:   { border: 'border-green-400',   iconCls: 'text-green-300'   },
+            sky:     { border: 'border-sky-400',     iconCls: 'text-sky-300'     },
+            orange:  { border: 'border-orange-400',  iconCls: 'text-orange-300'  },
+            amber:   { border: 'border-amber-400',   iconCls: 'text-amber-300'   },
+            indigo:  { border: 'border-indigo-400',  iconCls: 'text-indigo-300'  },
+            emerald: { border: 'border-emerald-400', iconCls: 'text-emerald-300' },
+            pink:    { border: 'border-pink-400',    iconCls: 'text-pink-300'    },
+            purple:  { border: 'border-purple-400',  iconCls: 'text-purple-300'  },
+            lime:    { border: 'border-lime-400',    iconCls: 'text-lime-300'    },
+            blue:    { border: 'border-blue-400',    iconCls: 'text-blue-300'    },
+            yellow:  { border: 'border-yellow-400',  iconCls: 'text-yellow-300'  },
+            teal:    { border: 'border-teal-400',    iconCls: 'text-teal-300'    }
+        };
+
+        // Reminders
+        function addReminder() {
+            var input = document.getElementById('new-reminder-input');
+            var text  = input.value.trim();
+            if (!text) return;
+
+            var list  = document.getElementById('reminder-list');
+            var names = contacts.map(function(c) { return c.name.split(' ')[0]; }).join(', ') || 'No contacts yet';
+            var time  = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            // AI picks the right icon
+            var picked = aiPickIcon(text);
+            var clr    = colorMap[picked.color] || colorMap['teal'];
+
+            var item = document.createElement('div');
+            item.className = 'bg-white p-4 rounded-2xl shadow-sm border-l-8 ' + clr.border + ' flex items-start justify-between gap-3 animate-pulse';
+            item.innerHTML = '<div class="flex-grow">'
+                + '<div class="flex items-center space-x-2 mb-1">'
+                + '<span class="bg-gray-100 text-xs font-bold text-gray-500 px-2 py-0.5 rounded-full uppercase tracking-wide"><i class="fas fa-robot mr-1 text-purple-500"></i>AI Icon</span>'
+                + '</div>'
+                + '<p class="text-xl font-bold text-gray-800">"' + text + '"</p>'
+                + '<p class="text-sm text-gray-500 mt-1 font-semibold">From <span class="text-teal-700 font-bold">You</span> &bull; ' + time + '</p>'
+                + '<p class="text-sm text-gray-400 mt-1"><i class="fas fa-eye mr-1 text-teal-500"></i><span class="text-teal-600 font-semibold">Visible to: ' + names + '</span></p>'
+                + '</div>'
+                + '<i class="fas ' + picked.icon + ' text-4xl ' + clr.iconCls + ' mt-1 flex-shrink-0"></i>';
+            list.prepend(item);
+            input.value = '';
+            showToast(picked.emoji, 'Reminder sent to all family members!');
+            setTimeout(function() { item.classList.remove('animate-pulse'); }, 2500);
         }
-        
+
+
+        // Mood
+        function selectMood(el, emoji, label) {
+            document.querySelectorAll('.mood-icon').forEach(function(m) {
+                m.style.opacity = '0.4'; m.style.transform = 'scale(0.9)';
+            });
+            el.style.opacity = '1'; el.style.transform = 'scale(1.25)';
+            document.getElementById('mood-feedback').classList.remove('hidden');
+            var names = contacts.map(function(c) { return c.name.split(' ')[0]; }).join(', ') || 'your family';
+            showToast(emoji, 'Mood "' + label + '" sent to ' + names + '!', 4000);
+        }
+
         function renderFamilyMoods() {
-            const container = document.getElementById('family-moods');
-            container.innerHTML = '';
-            
+            var box = document.getElementById('family-moods');
+            box.innerHTML = '';
             if (contacts.length === 0) {
-                container.innerHTML = '<p class="text-indigo-500 font-bold col-span-2">Add contacts to see their moods!</p>';
+                box.innerHTML = '<p class="col-span-2 text-center text-indigo-500 font-bold py-4">Add contacts to see their moods!</p>';
                 return;
             }
-
-            contacts.forEach(c => {
-                // Assign a pseudo-random mood for demonstration
-                const randomMood = possibleMoods[c.id % 4];
-                container.innerHTML += `
-                    <div class="bg-white p-3 rounded-2xl flex items-center space-x-3 shadow-sm border border-indigo-100">
-                        <img src="${c.avatar}" class="w-12 h-12 rounded-full border-2 border-indigo-200">
-                        <div>
-                            <p class="font-bold text-gray-800 text-lg leading-tight whitespace-nowrap overflow-hidden text-ellipsis">${c.name.split(' ')[0]}</p>
-                            <p class="text-2xl mt-1">${randomMood}</p>
-                        </div>
-                    </div>
-                `;
+            contacts.forEach(function(c) {
+                var mood = possibleMoods[c.id % 4];
+                box.innerHTML += '<div class="bg-white p-3 rounded-2xl flex items-center space-x-3 shadow-sm border border-indigo-100">'
+                    + '<img src="' + c.avatar + '" class="w-12 h-12 rounded-full border-2 border-indigo-200">'
+                    + '<div><p class="font-bold text-gray-800 text-lg">' + c.name.split(' ')[0] + '</p>'
+                    + '<p class="text-2xl mt-1">' + mood + '</p></div>'
+                    + '</div>';
             });
         }
 
-        // 5. Gallery (Photo/Video) Logic
+        // Gallery
         function addMedia(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const gallery = document.getElementById('gallery-container');
-                    const newCard = document.createElement('div');
-                    newCard.className = 'gallery-card bg-white p-3 rounded-2xl shadow-sm border-2 border-amber-200 snap-center animate-pulse';
-                    
-                    let mediaHtml = '';
-                    if (file.type.startsWith('video/')) {
-                        mediaHtml = `<video controls src="${e.target.result}" class="w-full h-52 object-cover rounded-xl mb-3 shadow-sm border border-gray-100"></video>`;
-                    } else {
-                        mediaHtml = `<img src="${e.target.result}" class="w-full h-52 object-cover rounded-xl mb-3 shadow-sm border border-gray-100" alt="New Upload">`;
-                    }
-
-                    newCard.innerHTML = `
-                        ${mediaHtml}
-                        <p class="text-lg font-bold text-gray-800 text-center">Shared with everyone ❤️</p>
-                    `;
-                    gallery.prepend(newCard);
-                    
-                    setTimeout(() => {
-                        newCard.classList.remove('animate-pulse');
-                    }, 2000);
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-        
-        // 6. Location Logic
-        function renderLocations() {
-            const list = document.getElementById('location-list');
-            const mapPins = document.getElementById('map-pins');
-            
-            list.innerHTML = '';
-            mapPins.innerHTML = '';
-            
-            if (contacts.length === 0) {
-                list.innerHTML = '<p class="text-lime-700 italic">No contacts added yet.</p>';
-            }
-
-            contacts.forEach((c, index) => {
-                // List Entry
-                list.innerHTML += `
-                    <li class="flex items-center space-x-3 bg-lime-50 p-2 rounded-xl border border-lime-100">
-                        <img src="${c.avatar}" class="w-10 h-10 rounded-full border-2 border-lime-300">
-                        <span class="font-bold text-gray-800 text-lg">${c.name.split(' ')[0]}</span>
-                        <span class="text-sm bg-lime-200 text-lime-800 px-2 py-1 rounded-lg ml-auto font-bold"><i class="fas fa-signal mr-1 text-xs"></i>Active</span>
-                    </li>
-                `;
-                
-                // Map Pin (pseudo-random positions)
-                const top = 15 + (index * 35) % 60;
-                const left = 20 + (index * 40) % 60;
-                mapPins.innerHTML += `
-                    <div class="absolute flex flex-col items-center" style="top: ${top}%; left: ${left}%;">
-                        <div class="bg-white p-1 rounded-full shadow-lg border-2 border-lime-400 mb-1">
-                            <img src="${c.avatar}" class="w-8 h-8 rounded-full">
-                        </div>
-                        <i class="fas fa-map-marker text-4xl text-lime-600 drop-shadow-md"></i>
-                        <span class="bg-white text-gray-800 text-xs font-bold px-2 py-1 rounded-full mt-1 border border-lime-200 shadow-sm">${c.name.split(' ')[0]}</span>
-                    </div>
-                `;
-            });
-        }
-        
-        function shareLocation() {
-            const myPin = document.getElementById('my-location-pin');
-            const btn = document.getElementById('share-loc-btn');
-            
-            myPin.classList.remove('hidden');
-            
-            btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Location Shared!';
-            btn.classList.replace('bg-lime-500', 'bg-green-600');
-            btn.classList.replace('hover:bg-lime-600', 'hover:bg-green-700');
-            
-            setTimeout(() => {
-                myPin.querySelector('.animate-pulse')?.classList.remove('animate-pulse');
-            }, 3000);
+            var file = event.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var gallery = document.getElementById('gallery-container');
+                var card = document.createElement('div');
+                card.className = 'gallery-card bg-white p-3 rounded-2xl shadow-sm border-2 border-amber-200 snap-center animate-pulse';
+                var media = file.type.startsWith('video/')
+                    ? '<video controls src="' + e.target.result + '" class="w-full h-52 object-cover rounded-xl mb-3 shadow-sm border border-gray-100"></video>'
+                    : '<img src="' + e.target.result + '" class="w-full h-52 object-cover rounded-xl mb-3 shadow-sm border border-gray-100" alt="New upload">';
+                card.innerHTML = media + '<p class="text-lg font-bold text-gray-800 text-center">Shared with family &#x2764;&#xFE0F;</p>';
+                gallery.prepend(card);
+                showToast('\u{1F4F8}', 'Shared with all family members!');
+                setTimeout(function() { card.classList.remove('animate-pulse'); }, 2500);
+            };
+            reader.readAsDataURL(file);
         }
 
-        // Initialize on load
-        document.addEventListener('DOMContentLoaded', () => {
-            updateUI();
-        });
+        // Init
+        document.addEventListener('DOMContentLoaded', updateUI);
     </script>
 </body>
 </html>
