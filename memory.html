@@ -274,8 +274,9 @@
     <!-- Main Content Area -->
     <main class="flex-grow w-full max-w-6xl mx-auto p-4 flex flex-col items-center mt-4 relative">
 
-        <!-- Setup/Tutorial Screen -->
-        <div id="setup-screen" class="w-full bg-white p-6 md:p-8 rounded-2xl shadow-xl border-2 border-indigo-100 mb-8">
+        <!-- Setup/Tutorial Screen (MODAL) -->
+        <div id="setup-screen" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="w-full bg-white p-6 md:p-8 rounded-3xl shadow-2xl max-w-4xl max-h-[90vh] overflow-y-auto">
             <h2 class="text-3xl md:text-4xl font-bold text-indigo-800 mb-8 text-center">How to Play</h2>
             
             <div class="mb-8">
@@ -302,10 +303,11 @@
             <button onclick="startGame()" class="btn-large w-full max-w-lg mx-auto block bg-indigo-600 text-white text-2xl md:text-3xl font-bold py-5 rounded-2xl shadow-xl border-b-4 border-indigo-800 hover:bg-indigo-500 active:translate-y-1 active:border-b-0 transition-all">
                 Start Game <i class="fas fa-play ml-2"></i>
             </button>
+            </div>
         </div>
 
         <!-- Game Screen -->
-        <div id="game-screen" class="hidden w-full flex flex-col items-center">
+        <div id="game-screen" class="w-full flex flex-col items-center">
             
             <div id="game-grid" class="game-grid">
                 <!-- Cards injected here -->

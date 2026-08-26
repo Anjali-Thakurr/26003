@@ -222,28 +222,47 @@
 </header>
 
 <!-- ═══════════════════════════════════════════════════════════
-     SCREEN 1 — DIFFICULTY SELECTION
+     SCREEN 1 — DIFFICULTY SELECTION (MODAL)
 ═══════════════════════════════════════════════════════════ -->
 <main id="screen-difficulty"
-      class="screen active flex-col items-center justify-center flex-grow w-full max-w-4xl mx-auto px-4 py-8 gap-8">
+      class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex-col items-center justify-center p-4 gap-8 overflow-y-auto" style="display:flex;">
+  <div class="max-w-4xl w-full mx-auto flex flex-col gap-8 bg-white/95 p-8 rounded-3xl shadow-2xl">
 
-  <!-- Hero -->
-  <div class="w-full bg-gradient-to-r from-teal-600 to-teal-800 text-white p-8 rounded-3xl shadow-lg text-center">
-    <div class="flex justify-center mb-4">
-      <div class="bg-white bg-opacity-20 p-5 rounded-full">
-        <i class="fas fa-puzzle-piece text-6xl"></i>
+  <!-- Step 1: Instructions -->
+  <div id="jig-step-1" class="flex flex-col gap-8 w-full transition-all duration-300">
+    <!-- Hero -->
+    <div class="w-full bg-gradient-to-r from-teal-600 to-teal-800 text-white p-8 rounded-3xl shadow-lg text-center">
+      <div class="flex justify-center mb-4">
+        <div class="bg-white bg-opacity-20 p-5 rounded-full">
+          <i class="fas fa-puzzle-piece text-6xl"></i>
+        </div>
       </div>
+      <h2 class="text-4xl font-bold mb-2">Jigsaw Explorer 🧩</h2>
+      <p class="text-xl text-teal-100 mb-2">Drag puzzle pieces together to complete a beautiful picture!</p>
+      <p class="text-lg text-teal-200 mt-1 mb-6">Each game uses a brand new AI-generated image 🎨</p>
+      
+      <!-- Tip -->
+      <div class="w-full bg-white/20 border border-teal-300 rounded-2xl p-5 flex items-start gap-4 shadow-sm text-left mb-6">
+        <div class="bg-teal-100 text-teal-700 p-3 rounded-full flex-shrink-0">
+          <i class="fas fa-lightbulb text-2xl"></i>
+        </div>
+        <div>
+          <p class="text-xl font-semibold text-white">Tip!</p>
+          <p class="text-lg text-teal-50 mt-1">Press the 👁 Peek button anytime to see what the finished picture looks like.</p>
+        </div>
+      </div>
+      
+      <button onclick="document.getElementById('jig-step-1').style.display='none'; document.getElementById('jig-step-2').style.display='flex';" class="bg-white text-teal-800 text-2xl font-bold py-4 px-10 rounded-2xl hover:bg-teal-100 transition shadow-lg w-full md:w-auto inline-block">Got it</button>
     </div>
-    <h2 class="text-4xl font-bold mb-2">Jigsaw Explorer 🧩</h2>
-    <p class="text-xl text-teal-100">Drag puzzle pieces together to complete a beautiful picture!</p>
-    <p class="text-lg text-teal-200 mt-1">Each game uses a brand new AI-generated image 🎨</p>
   </div>
 
-  <!-- Difficulty label -->
-  <div class="text-center">
-    <h3 class="text-3xl font-bold text-teal-800">How hard would you like to play?</h3>
-    <p class="text-xl text-gray-500 mt-1">Choose a level that feels comfortable for you</p>
-  </div>
+  <!-- Step 2: Difficulty -->
+  <div id="jig-step-2" class="flex flex-col gap-8 w-full transition-all duration-300" style="display:none;">
+    <!-- Difficulty label -->
+    <div class="text-center">
+      <h3 class="text-3xl font-bold text-teal-800">How hard would you like to play?</h3>
+      <p class="text-xl text-gray-500 mt-1">Choose a level that feels comfortable for you</p>
+    </div>
 
   <!-- Difficulty cards -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
@@ -303,23 +322,26 @@
     </div>
   </div>
 
+  </div>
 </main>
 
 <!-- ═══════════════════════════════════════════════════════════
      SCREEN 2 — GAME LOADING
 ═══════════════════════════════════════════════════════════ -->
 <main id="screen-loading"
-      class="screen flex-col items-center justify-center flex-grow gap-6 text-center px-6">
+      class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex-col items-center justify-center gap-6 text-center px-6" style="display:none;">
+  <div class="bg-white/95 p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-6 max-w-md w-full">
   <div class="spinner"></div>
   <p class="text-2xl font-semibold text-teal-700" id="loading-msg">Generating your picture with AI… 🎨</p>
   <p class="text-lg text-gray-500">Please wait a moment…</p>
+  </div>
 </main>
 
 <!-- ═══════════════════════════════════════════════════════════
      SCREEN 3 — GAMEPLAY
 ═══════════════════════════════════════════════════════════ -->
 <main id="screen-game"
-      class="screen flex-col flex-grow" style="height: calc(100vh - 80px);">
+      class="flex-col flex-grow flex active" style="height: calc(100vh - 80px);">
 
   <!-- Toolbar -->
   <div class="bg-white border-b-2 border-teal-100 shadow-sm px-4 py-3 flex flex-wrap gap-3 items-center justify-between">
@@ -516,10 +538,23 @@ function refreshBestTimeDisplay() {
 
 /* ── Screen switcher ───────────────────────────────────── */
 function showScreen(name) {
-  [screenDiff, screenLoad, screenGame].forEach(s => s.classList.remove('active'));
-  if (name === 'difficulty') { screenDiff.classList.add('active'); gameStatsBar.classList.add('hidden'); }
-  if (name === 'loading')    { screenLoad.classList.add('active'); gameStatsBar.classList.add('hidden'); }
-  if (name === 'game')       { screenGame.classList.add('active'); gameStatsBar.classList.remove('hidden'); }
+  screenGame.classList.add('active'); // Always active in background
+  
+  if (name === 'difficulty') { 
+    screenDiff.style.display = 'flex'; 
+    screenLoad.style.display = 'none';
+    gameStatsBar.classList.add('hidden'); 
+  }
+  else if (name === 'loading') { 
+    screenDiff.style.display = 'none'; 
+    screenLoad.style.display = 'flex';
+    gameStatsBar.classList.add('hidden'); 
+  }
+  else if (name === 'game') { 
+    screenDiff.style.display = 'none'; 
+    screenLoad.style.display = 'none';
+    gameStatsBar.classList.remove('hidden'); 
+  }
 }
 
 /* ── Timer ─────────────────────────────────────────────── */

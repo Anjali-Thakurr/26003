@@ -52,7 +52,7 @@ const translations = {
 
         // Common
         home: "Home",
-        headerTitle: "Ministry of Development of North Eastern Region (MDoNER)",
+        headerTitle: "SMRITI — Smart Memory Reinforcement & Interactive Technology Interface",
     },
     hi: {
         // Index page

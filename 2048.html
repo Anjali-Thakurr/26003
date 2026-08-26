@@ -101,81 +101,57 @@
   </div>
 </header>
 
-<!-- ══════════ SCREEN 1 – INSTRUCTIONS (Elder-Friendly) ══════════ -->
-<main id="screenIntro" class="screen active flex-grow flex-col items-center justify-center p-4 w-full max-w-2xl mx-auto">
-
-  <div class="fade-up w-full">
-
+<!-- ══════════ SCREEN 1 – INSTRUCTIONS (Elder-Friendly) MODAL ══════════ -->
+<div id="screenIntro" class="screen active fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+  <div class="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh] fade-up relative">
+    
     <!-- Title -->
-    <div class="text-center bg-teal-700 rounded-3xl shadow-lg p-8 mb-6">
-      <div class="text-7xl mb-3">🧩</div>
-      <h2 class="text-5xl font-black text-white mb-2">2048</h2>
-      <p class="text-teal-100 text-2xl font-semibold">A Fun Number Game!</p>
+    <div class="text-center bg-teal-700 rounded-3xl shadow-lg p-6 mb-6">
+      <div class="text-6xl mb-3">🧩</div>
+      <h2 class="text-4xl font-black text-white mb-2">2048</h2>
+      <p class="text-teal-100 text-xl font-semibold">A Fun Number Game!</p>
     </div>
 
     <!-- Big numbered steps -->
-    <h3 class="text-2xl font-black text-teal-800 mb-4 text-center">📖 How To Play</h3>
+    <h3 class="text-xl font-black text-teal-800 mb-4 text-center">📖 How To Play</h3>
 
-    <div class="flex flex-col gap-4 mb-6">
-
+    <div class="flex flex-col gap-3 mb-6">
       <!-- Step 1 -->
-      <div class="bg-white rounded-2xl shadow border-2 border-teal-100 p-5 flex items-center gap-5">
-        <div class="flex-shrink-0 w-16 h-16 bg-teal-600 text-white rounded-full flex items-center justify-center text-3xl font-black shadow">1</div>
+      <div class="bg-gray-50 rounded-2xl border-2 border-teal-100 p-4 flex items-center gap-4">
+        <div class="flex-shrink-0 w-12 h-12 bg-teal-600 text-white rounded-full flex items-center justify-center text-xl font-black shadow">1</div>
         <div>
-          <p class="text-3xl mb-1">👆  Swipe or Press Arrow Keys</p>
-          <p class="text-gray-600 text-xl leading-snug">Move all the tiles <strong>Left, Right, Up or Down</strong> on the board.</p>
+          <p class="text-xl mb-1 font-bold">👆 Swipe or Press Arrow Keys</p>
+          <p class="text-gray-600 text-lg leading-snug">Move all the tiles <strong>Left, Right, Up or Down</strong> on the board.</p>
         </div>
       </div>
-
       <!-- Step 2 -->
-      <div class="bg-white rounded-2xl shadow border-2 border-teal-100 p-5 flex items-center gap-5">
-        <div class="flex-shrink-0 w-16 h-16 bg-orange-500 text-white rounded-full flex items-center justify-center text-3xl font-black shadow">2</div>
+      <div class="bg-gray-50 rounded-2xl border-2 border-teal-100 p-4 flex items-center gap-4">
+        <div class="flex-shrink-0 w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center text-xl font-black shadow">2</div>
         <div>
-          <p class="text-3xl mb-1">🔗  Same Numbers Join!</p>
-          <p class="text-gray-600 text-xl leading-snug">When two tiles with the <strong>same number</strong> touch, they <strong>add up</strong> into one tile.<br>
-            <span class="inline-block mt-1 bg-orange-100 text-orange-800 font-black text-xl px-4 py-1 rounded-full">2 + 2 = 4 &nbsp;·&nbsp; 4 + 4 = 8</span>
-          </p>
+          <p class="text-xl mb-1 font-bold">🔗 Same Numbers Join!</p>
+          <p class="text-gray-600 text-lg leading-snug">When two tiles with the <strong>same number</strong> touch, they <strong>add up</strong> into one tile.</p>
         </div>
       </div>
-
       <!-- Step 3 -->
-      <div class="bg-white rounded-2xl shadow border-2 border-teal-100 p-5 flex items-center gap-5">
-        <div class="flex-shrink-0 w-16 h-16 bg-yellow-500 text-white rounded-full flex items-center justify-center text-3xl font-black shadow">3</div>
+      <div class="bg-gray-50 rounded-2xl border-2 border-teal-100 p-4 flex items-center gap-4">
+        <div class="flex-shrink-0 w-12 h-12 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xl font-black shadow">3</div>
         <div>
-          <p class="text-3xl mb-1">🏆  Reach 2048 to Win!</p>
-          <p class="text-gray-600 text-xl leading-snug">Keep merging until you make the big <strong>2048</strong> tile. That is your victory!</p>
+          <p class="text-xl mb-1 font-bold">🏆 Reach 2048 to Win!</p>
+          <p class="text-gray-600 text-lg leading-snug">Keep merging until you make the big <strong>2048</strong> tile.</p>
         </div>
       </div>
-
-      <!-- Step 4 -->
-      <div class="bg-white rounded-2xl shadow border-2 border-red-100 p-5 flex items-center gap-5">
-        <div class="flex-shrink-0 w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-3xl font-black shadow">4</div>
-        <div>
-          <p class="text-3xl mb-1">😟  Game Ends When…</p>
-          <p class="text-gray-600 text-xl leading-snug">The board is <strong>full</strong> and no two matching tiles are next to each other. Don't worry — you can always <strong>try again!</strong></p>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Tip box -->
-    <div class="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-5 mb-7 flex items-start gap-4">
-      <span class="text-4xl flex-shrink-0">💡</span>
-      <p class="text-yellow-900 text-xl font-semibold leading-snug">
-        <strong>Helpful Tip:</strong> Try to keep your biggest number in one corner and build the other numbers around it!
-      </p>
     </div>
 
     <!-- BIG Start button -->
-    <button id="btnStart" class="w-full bg-teal-700 hover:bg-teal-800 active:scale-95 transition text-white text-3xl font-black py-7 rounded-3xl shadow-xl flex items-center justify-center gap-4">
-      <i class="fas fa-play-circle text-4xl"></i> Let's Play!
+    <button id="btnStart" class="w-full bg-teal-700 hover:bg-teal-800 active:scale-95 transition text-white text-2xl font-black py-4 rounded-3xl shadow-xl flex items-center justify-center gap-4">
+      <i class="fas fa-play-circle text-3xl"></i> Let's Play!
     </button>
 
   </div>
-</main>
+</div>
 
 <!-- ══════════ SCREEN 2 – GAME ══════════ -->
-<main id="screenGame" class="screen flex-grow flex-col items-center p-4 w-full max-w-2xl mx-auto">
+<main id="screenGame" class="screen active flex-grow flex-col items-center p-4 w-full max-w-2xl mx-auto">
 
   <!-- Score row -->
   <div class="w-full max-w-[460px] flex items-center justify-between mb-3">
@@ -296,14 +272,20 @@
 
   /* ── SCREEN SWITCH ── */
   function showScreen(id){
-    ["screenIntro","screenGame"].forEach(function(s){
-      var el=document.getElementById(s);
-      el.classList.remove("active");
-      el.style.display="";
-    });
-    var t=document.getElementById(id);
-    t.classList.add("active");
-    t.style.display="flex";
+    var intro = document.getElementById("screenIntro");
+    var game = document.getElementById("screenGame");
+    
+    if (id === "screenIntro") {
+      intro.classList.add("active");
+      intro.style.display="flex";
+    } else {
+      intro.classList.remove("active");
+      intro.style.display="";
+    }
+    
+    // Game screen is always visible in the background
+    game.classList.add("active");
+    game.style.display="flex";
   }
 
   document.getElementById("btnStart").addEventListener("click", function(){

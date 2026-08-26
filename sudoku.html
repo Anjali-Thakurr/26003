@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -207,6 +207,32 @@
       <div class="win-stat"><div class="val" id="win-mistakes">0</div><div class="lbl">Mistakes</div></div>
     </div>
     <button class="win-btn" id="win-new">Play Again</button>
+  </div>
+</div>
+
+<div id="instruction-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:200; display:flex; align-items:center; justify-content:center;">
+  <div class="win-card" style="max-width:400px; text-align:left; transition: all 0.3s;" id="instr-step-1">
+    <div class="win-emoji" style="text-align:center;">🔢</div>
+    <div class="win-title" style="text-align:center;">Sudoku</div>
+    <div class="win-sub" style="margin-bottom:20px;">
+      <b>How to play:</b><br><br>
+      • Fill the 9x9 grid with numbers 1 to 9.<br>
+      • Every row, column, and 3x3 box must contain each number exactly once.<br>
+      • Use the Notes feature to keep track of possible numbers.<br>
+      • You have 3 chances (mistakes) before you need to restart!
+    </div>
+    <button class="win-btn" id="got-it-btn" style="width:100%;">Got it</button>
+  </div>
+  
+  <div class="win-card" style="max-width:400px; text-align:center; display:none;" id="instr-step-2">
+    <div class="win-emoji">🎚️</div>
+    <div class="win-title">Select Difficulty</div>
+    <div class="win-sub" style="margin-bottom:20px;">Choose your level of hardness</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="win-btn" onclick="startSudoku('easy')" style="width:100%; background:#22c55e;">Easy</button>
+      <button class="win-btn" onclick="startSudoku('medium')" style="width:100%; background:#f59e0b;">Medium</button>
+      <button class="win-btn" onclick="startSudoku('hard')" style="width:100%; background:#ef4444;">Hard</button>
+    </div>
   </div>
 </div>
 
@@ -427,14 +453,15 @@ function showWin(){
 }
 
 /* === NEW GAME / RESET === */
-function newGame(difficulty){
+function newGame(difficulty, skipTimer = false){
   state.difficulty=difficulty||state.difficulty;state.won=false;state.mistakes=0;
   state.noteMode=false;state.selected=null;mistakeEl.textContent="0";
   winOverlay.classList.remove("show");updateNoteBtn();
   const{puzzle,solution}=generatePuzzle(state.difficulty);
   state.puzzle=puzzle;state.solution=solution;state.board=puzzle.map(r=>[...r]);
   state.notes=Array.from({length:9},()=>Array.from({length:9},()=>new Set()));
-  countNums();renderAll();startTimer();
+  countNums();renderAll();
+  if (!skipTimer) startTimer();
 }
 
 function resetGame(){
@@ -494,8 +521,21 @@ document.getElementById("win-new").addEventListener("click",()=>{
   newGame(document.querySelector(".diff-btn.active")?.dataset.level||"easy");
 });
 
+document.getElementById("got-it-btn").addEventListener("click",()=>{
+  document.getElementById("instr-step-1").style.display = 'none';
+  document.getElementById("instr-step-2").style.display = 'block';
+});
+
+function startSudoku(level) {
+  document.getElementById("instruction-modal").style.display = 'none';
+  document.querySelectorAll(".diff-btn").forEach(b=>{
+    b.classList.toggle("active", b.dataset.level === level);
+  });
+  newGame(level, false);
+}
+
 /* === INIT === */
-buildGrid();buildNumpad();newGame("easy");
+buildGrid();buildNumpad();newGame("easy", true);
 </script>
 </body>
 </html>
